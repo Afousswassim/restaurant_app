@@ -7,8 +7,9 @@ import 'screens/splash_screen.dart';
 import 'screens/cart_screen.dart';
 import 'utils/helpers.dart';
 
-void main() {
-  SessionManager.initializeSession();
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await SessionManager.ensureSession();
   runApp(const MyApp());
 }
 

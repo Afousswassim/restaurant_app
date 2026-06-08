@@ -50,7 +50,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       final cartProvider = context.read<CartProvider>();
       final orderProvider = context.read<OrderProvider>();
 
-      if (cartProvider.cart?.restaurantId == null) {
+      if (cartProvider.restaurantId == null) {
         throw Exception('No restaurant selected');
       }
 
@@ -59,7 +59,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         customerName: _nameController.text,
         phone: _phoneController.text,
         address: _addressController.text,
-        restaurantId: cartProvider.cart!.restaurantId!,
+        restaurantId: cartProvider.restaurantId!,
         email: _emailController.text,
         notes: _notesController.text,
         deliveryFee: widget.deliveryFee,

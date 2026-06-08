@@ -4,22 +4,28 @@ import '../services/api_service.dart';
 import '../utils/helpers.dart';
 
 class CartProvider with ChangeNotifier {
-  Cart? _cart;
+  List<CartItem> _items = [];
   bool _isLoading = false;
   String? _error;
 
-  Cart? get cart => _cart;
+  List<CartItem> get items => _items;
   bool get isLoading => _isLoading;
   String? get error => _error;
-  
-  List<CartItem> get items => _cart?.items ?? [];
-  int get itemCount => items.length;
-  int get totalQuantity => items.fold(0, (sum, item) => sum + item.quantity);
-  double get subtotal => _cart?.subtotal ?? 0;
-  double get totalAmount => (_cart?.subtotal ?? 0) + 15;
+
+  int get itemCount => _items.length;
+  int get totalQuantity => _items.fold(0, (sum, item) => sum + item.quantity);
+  double get subtotal => _items.fold(0, (sum, item) => sum + item.totalPrice);
+  double get totalAmount => subtotal + 15;
+
+  String? get restaurantId => _items.isEmpty ? null : _items.first.restaurantId;
 
   Future<void> initializeCart() async {
-    SessionManager.initializeSession();
+    await SessionManager.ensureSession();
+    await loadCart();
+  }
+
+  Future<void> loadCart() async {
+    await SessionManager.ensureSession();
     await fetchCart();
   }
 
@@ -29,12 +35,11 @@ class CartProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final data = await ApiService.getCart(SessionManager.sessionId);
-      _cart = Cart.fromJson(data as Map<String, dynamic>);
+      _items = await ApiService.getCart(SessionManager.sessionId);
       _error = null;
     } catch (e) {
       _error = e.toString();
-      _cart = Cart(sessionId: SessionManager.sessionId, items: []);
+      _items = [];
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -46,62 +51,69 @@ class CartProvider with ChangeNotifier {
     required String restaurantId,
     int quantity = 1,
   }) async {
+    await SessionManager.ensureSession();
     _error = null;
+
     try {
-      final data = await ApiService.addToCart(
+      await ApiService.addToCart(
         sessionId: SessionManager.sessionId,
         menuItemId: menuItem.id,
         quantity: quantity,
         restaurantId: restaurantId,
       );
-      _cart = Cart.fromJson(data as Map<String, dynamic>);
+      await fetchCart();
     } catch (e) {
       _error = e.toString();
+      notifyListeners();
+      rethrow;
     }
-    notifyListeners();
   }
 
   Future<void> updateQuantity(String menuItemId, int quantity) async {
+    if (quantity <= 0) {
+      await removeItem(menuItemId);
+      return;
+    }
     _error = null;
     try {
-      final data = await ApiService.updateCartItem(
+      await ApiService.updateCartItem(
         sessionId: SessionManager.sessionId,
         menuItemId: menuItemId,
         quantity: quantity,
       );
-      _cart = Cart.fromJson(data as Map<String, dynamic>);
+      await fetchCart();
     } catch (e) {
       _error = e.toString();
+      notifyListeners();
     }
-    notifyListeners();
   }
 
   Future<void> removeItem(String menuItemId) async {
     _error = null;
     try {
-      final data = await ApiService.removeFromCart(
+      await ApiService.removeFromCart(
         sessionId: SessionManager.sessionId,
         menuItemId: menuItemId,
       );
-      _cart = Cart.fromJson(data as Map<String, dynamic>);
+      await fetchCart();
     } catch (e) {
       _error = e.toString();
+      notifyListeners();
     }
-    notifyListeners();
   }
 
   Future<void> clearCart() async {
     _error = null;
     try {
       await ApiService.clearCart(SessionManager.sessionId);
-      _cart = Cart(sessionId: SessionManager.sessionId, items: []);
+      await fetchCart();
     } catch (e) {
       _error = e.toString();
+      notifyListeners();
     }
-    notifyListeners();
   }
 
   bool hasRestaurantItems(String restaurantId) {
-    return items.isEmpty || items.first.restaurantId == restaurantId;
+    return _items.isEmpty || _items.first.restaurantId == restaurantId;
   }
 }

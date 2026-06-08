@@ -1,6 +1,27 @@
 const Cart = require('../models/Cart');
 const MenuItem = require('../models/MenuItem');
 
+const formatCartItems = (items) =>
+  items.map((item) => {
+    const menuItem = item.menuItemId;
+    const isPopulated = menuItem && typeof menuItem === 'object' && menuItem._id;
+
+    return {
+      _id: item._id,
+      menuItemId: isPopulated
+        ? {
+            _id: menuItem._id,
+            name: menuItem.name,
+            price: menuItem.price,
+            imageUrl: menuItem.imageUrl,
+            description: menuItem.description,
+          }
+        : menuItem,
+      quantity: item.quantity,
+      restaurantId: item.restaurantId,
+    };
+  });
+
 exports.getCart = async (req, res) => {
   try {
     const { sessionId } = req.query;
@@ -12,7 +33,7 @@ exports.getCart = async (req, res) => {
       });
     }
 
-    let cart = await Cart.findOne({ sessionId });
+    let cart = await Cart.findOne({ sessionId }).populate('items.menuItemId');
 
     if (!cart) {
       cart = await Cart.create({
@@ -23,7 +44,7 @@ exports.getCart = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      data: cart,
+      data: formatCartItems(cart.items),
     });
   } catch (error) {
     res.status(500).json({
@@ -87,9 +108,11 @@ exports.addToCart = async (req, res) => {
 
     await cart.save();
 
+    const populatedCart = await Cart.findById(cart._id).populate('items.menuItemId');
+
     res.status(200).json({
       success: true,
-      data: cart,
+      data: formatCartItems(populatedCart.items),
     });
   } catch (error) {
     res.status(500).json({
@@ -101,7 +124,8 @@ exports.addToCart = async (req, res) => {
 
 exports.updateCartItem = async (req, res) => {
   try {
-    const { sessionId, menuItemId, quantity } = req.body;
+    const { sessionId, quantity } = req.body;
+    const menuItemId = req.params.id;
 
     if (!sessionId || !menuItemId) {
       return res.status(400).json({
@@ -140,9 +164,11 @@ exports.updateCartItem = async (req, res) => {
 
     await cart.save();
 
+    const populatedCart = await Cart.findById(cart._id).populate('items.menuItemId');
+
     res.status(200).json({
       success: true,
-      data: cart,
+      data: formatCartItems(populatedCart.items),
     });
   } catch (error) {
     res.status(500).json({
@@ -154,7 +180,8 @@ exports.updateCartItem = async (req, res) => {
 
 exports.removeFromCart = async (req, res) => {
   try {
-    const { sessionId, menuItemId } = req.body;
+    const sessionId = req.body.sessionId || req.query.sessionId;
+    const menuItemId = req.params.id;
 
     if (!sessionId || !menuItemId) {
       return res.status(400).json({
@@ -178,9 +205,11 @@ exports.removeFromCart = async (req, res) => {
 
     await cart.save();
 
+    const populatedCart = await Cart.findById(cart._id).populate('items.menuItemId');
+
     res.status(200).json({
       success: true,
-      data: cart,
+      data: formatCartItems(populatedCart.items),
     });
   } catch (error) {
     res.status(500).json({
@@ -192,7 +221,7 @@ exports.removeFromCart = async (req, res) => {
 
 exports.clearCart = async (req, res) => {
   try {
-    const { sessionId } = req.body;
+    const sessionId = req.body.sessionId || req.query.sessionId;
 
     if (!sessionId) {
       return res.status(400).json({
@@ -211,11 +240,12 @@ exports.clearCart = async (req, res) => {
     }
 
     cart.items = [];
+    cart.restaurantId = null;
     await cart.save();
 
     res.status(200).json({
       success: true,
-      data: cart,
+      data: [],
     });
   } catch (error) {
     res.status(500).json({

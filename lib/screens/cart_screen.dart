@@ -1,13 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../models/models.dart';
 import '../providers/cart_provider.dart';
 import '../utils/helpers.dart';
 import 'checkout_screen.dart';
 
-class CartScreen extends StatelessWidget {
+class CartScreen extends StatefulWidget {
   static const routeName = '/cart';
 
   const CartScreen({Key? key}) : super(key: key);
+
+  @override
+  State<CartScreen> createState() => _CartScreenState();
+}
+
+class _CartScreenState extends State<CartScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<CartProvider>(context, listen: false).loadCart();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -64,15 +78,48 @@ class CartScreen extends StatelessWidget {
   Widget _buildCartItemTile(
     BuildContext context,
     CartProvider cartProvider,
-    dynamic item,
+    CartItem item,
   ) {
     return Padding(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       child: Card(
         child: Padding(
           padding: const EdgeInsets.all(12),
           child: Row(
             children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.network(
+                  item.imageUrl.isNotEmpty
+                      ? item.imageUrl
+                      : 'https://images.unsplash.com/photo-1495195134139-0d4517b28b9f?w=400&h=300&fit=crop',
+                  width: 60,
+                  height: 60,
+                  fit: BoxFit.cover,
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return Container(
+                      width: 60,
+                      height: 60,
+                      color: Colors.grey.shade200,
+                      child: const Center(
+                        child: SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      ),
+                    );
+                  },
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    width: 60,
+                    height: 60,
+                    color: Colors.grey.shade300,
+                    child: const Icon(Icons.fastfood, size: 30, color: Colors.grey),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -99,12 +146,10 @@ class CartScreen extends StatelessWidget {
                 children: [
                   IconButton(
                     icon: const Icon(Icons.remove_circle_outline, size: 20),
-                    onPressed: item.quantity > 1
-                        ? () => cartProvider.updateQuantity(
-                          item.menuItemId,
-                          item.quantity - 1,
-                        )
-                        : null,
+                    onPressed: () => cartProvider.updateQuantity(
+                      item.menuItemId,
+                      item.quantity - 1,
+                    ),
                   ),
                   Text(
                     '${item.quantity}',

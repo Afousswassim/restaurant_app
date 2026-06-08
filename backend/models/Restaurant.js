@@ -37,6 +37,14 @@ const restaurantSchema = new mongoose.Schema(
       type: String,
       default: 'Mixed',
     },
+    category: {
+      type: String,
+      default: 'Mixed',
+    },
+    averagePrice: {
+      type: Number,
+      default: 0,
+    },
     isOpen: {
       type: Boolean,
       default: true,

@@ -1,17 +1,33 @@
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
 class SessionManager {
   static const String _sessionIdKey = 'app_session_id';
   static late String _sessionId;
+  static bool _initialized = false;
 
   static String get sessionId => _sessionId;
 
-  static void initializeSession() {
-    _sessionId = const Uuid().v4();
+  static Future<void> ensureSession() async {
+    if (_initialized) return;
+
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getString(_sessionIdKey);
+
+    if (saved != null && saved.isNotEmpty) {
+      _sessionId = saved;
+    } else {
+      _sessionId = const Uuid().v4();
+      await prefs.setString(_sessionIdKey, _sessionId);
+    }
+
+    _initialized = true;
   }
 
-  static void resetSession() {
+  static Future<void> resetSession() async {
     _sessionId = const Uuid().v4();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_sessionIdKey, _sessionId);
   }
 }
 

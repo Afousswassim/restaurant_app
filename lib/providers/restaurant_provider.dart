@@ -24,20 +24,13 @@ class RestaurantProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final data = await ApiService.getRestaurants();
-      _restaurants = (data as List)
-          .map((item) => Restaurant.fromJson(item as Map<String, dynamic>))
-          .toList();
-      if (_restaurants.isEmpty) {
-        _restaurants = dummyRestaurants;
-      }
+      _restaurants = await ApiService.getRestaurants();
       _applyFilters();
       _error = null;
     } catch (e) {
       _error = e.toString();
-      _restaurants = dummyRestaurants;
+      _restaurants = [];
       _filteredRestaurants = [];
-      _applyFilters();
     } finally {
       _isLoading = false;
       notifyListeners();

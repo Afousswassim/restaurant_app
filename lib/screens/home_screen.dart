@@ -22,11 +22,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   final List<Map<String, String>> _categories = [
     {'name': 'All', 'icon': '🍽️'},
-    {'name': 'Burgers', 'icon': '🍔'},
+    {'name': 'Burger', 'icon': '🍔'},
     {'name': 'Pizza', 'icon': '🍕'},
-    {'name': 'Sushi', 'icon': '🍣'},
-    {'name': 'Salads', 'icon': '🥗'},
-    {'name': 'Desserts', 'icon': '🍰'},
+    {'name': 'Salad', 'icon': '🥗'},
+    {'name': 'Dessert', 'icon': '🍰'},
   ];
 
   @override
@@ -297,6 +296,55 @@ class _HomeScreenState extends State<HomeScreen> {
             // Restaurants list or Empty filter result screen
             Consumer<RestaurantProvider>(
               builder: (context, provider, child) {
+                if (provider.isLoading) {
+                  return const SliverFillRemaining(
+                    child: Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                  );
+                }
+
+                if (provider.error != null) {
+                  return SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 30),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(
+                            Icons.error_outline_rounded,
+                            size: 80,
+                            color: Colors.red,
+                          ),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'Failed to load restaurants',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            provider.error!,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: theme.colorScheme.onSurfaceVariant.withOpacity(0.6),
+                              fontSize: 14,
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          FilledButton(
+                            onPressed: () => provider.fetchRestaurants(),
+                            child: const Text('Retry'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+
                 final restaurants = provider.restaurants;
 
                 if (restaurants.isEmpty) {

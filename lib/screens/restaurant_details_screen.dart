@@ -5,6 +5,7 @@ import '../data/dummy_menu_items.dart';
 import '../providers/cart_provider.dart';
 import '../services/api_service.dart';
 import '../utils/helpers.dart';
+import '../widgets/menu_item_card.dart';
 import 'cart_screen.dart';
 
 class RestaurantDetailsScreen extends StatefulWidget {

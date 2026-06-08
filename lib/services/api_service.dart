@@ -55,7 +55,7 @@ class ApiService {
               .delete(
                 uri,
                 headers: headers,
-                body: jsonEncode(body),
+                body: body != null ? jsonEncode(body) : null,
               )
               .timeout(timeoutDuration, onTimeout: () {
             throw Exception('Request timeout after ${timeoutDuration.inSeconds}s');
@@ -92,10 +92,21 @@ class ApiService {
     }
   }
 
+  static List<CartItem> _parseCartItems(dynamic data) {
+    if (data == null) return [];
+    if (data is! List) return [];
+
+    return data
+        .map((item) => CartItem.fromJson(item as Map<String, dynamic>))
+        .toList();
+  }
+
   // Restaurant endpoints
-  static Future<List<dynamic>> getRestaurants() async {
+  static Future<List<Restaurant>> getRestaurants() async {
     final data = await _makeRequest('GET', '/restaurants');
-    return List.from(data);
+    return List.from(data)
+        .map((item) => Restaurant.fromJson(item as Map<String, dynamic>))
+        .toList();
   }
 
   static Future<dynamic> getRestaurantById(String id) async {
@@ -115,17 +126,18 @@ class ApiService {
   }
 
   // Cart endpoints
-  static Future<dynamic> getCart(String sessionId) async {
-    return await _makeRequest('GET', '/cart?sessionId=$sessionId');
+  static Future<List<CartItem>> getCart(String sessionId) async {
+    final data = await _makeRequest('GET', '/cart?sessionId=$sessionId');
+    return _parseCartItems(data);
   }
 
-  static Future<dynamic> addToCart({
+  static Future<void> addToCart({
     required String sessionId,
     required String menuItemId,
     required int quantity,
     required String restaurantId,
   }) async {
-    return await _makeRequest(
+    await _makeRequest(
       'POST',
       '/cart',
       body: {
@@ -137,40 +149,38 @@ class ApiService {
     );
   }
 
-  static Future<dynamic> updateCartItem({
+  static Future<void> updateCartItem({
     required String sessionId,
     required String menuItemId,
     required int quantity,
   }) async {
-    return await _makeRequest(
+    await _makeRequest(
       'PUT',
-      '/cart',
+      '/cart/$menuItemId',
       body: {
         'sessionId': sessionId,
-        'menuItemId': menuItemId,
         'quantity': quantity,
       },
     );
   }
 
-  static Future<dynamic> removeFromCart({
+  static Future<void> removeFromCart({
     required String sessionId,
     required String menuItemId,
   }) async {
-    return await _makeRequest(
+    await _makeRequest(
       'DELETE',
-      '/cart',
+      '/cart/$menuItemId',
       body: {
         'sessionId': sessionId,
-        'menuItemId': menuItemId,
       },
     );
   }
 
-  static Future<dynamic> clearCart(String sessionId) async {
-    return await _makeRequest(
-      'POST',
-      '/cart/clear',
+  static Future<void> clearCart(String sessionId) async {
+    await _makeRequest(
+      'DELETE',
+      '/cart',
       body: {'sessionId': sessionId},
     );
   }

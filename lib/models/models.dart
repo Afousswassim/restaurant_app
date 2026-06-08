@@ -115,42 +115,7 @@ class MenuItem {
     'rating': rating,
   };
 }
-
-class CartItem {
-  final String menuItemId;
-  final String restaurantId;
-  final int quantity;
-  final double price;
-  final String name;
-
-  CartItem({
-    required this.menuItemId,
-    required this.restaurantId,
-    required this.quantity,
-    required this.price,
-    required this.name,
-  });
-
-  factory CartItem.fromJson(Map<String, dynamic> json) {
-    return CartItem(
-      menuItemId: json['menuItemId'] ?? '',
-      restaurantId: json['restaurantId'] ?? '',
-      quantity: json['quantity'] ?? 0,
-      price: (json['price'] ?? 0).toDouble(),
-      name: json['name'] ?? '',
-    );
-  }
-
-  Map<String, dynamic> toJson() => {
-    'menuItemId': menuItemId,
-    'restaurantId': restaurantId,
-    'quantity': quantity,
-    'price': price,
-    'name': name,
-  };
-
-  double get totalPrice => price * quantity;
-}
+export 'cart_item.dart';
 
 class Cart {
   final String sessionId;
