@@ -1,31 +1,9 @@
-const Cart = require('../models/Cart');
+const CartItem = require('../models/CartItem');
 const MenuItem = require('../models/MenuItem');
-
-const formatCartItems = (items) =>
-  items.map((item) => {
-    const menuItem = item.menuItemId;
-    const isPopulated = menuItem && typeof menuItem === 'object' && menuItem._id;
-
-    return {
-      _id: item._id,
-      menuItemId: isPopulated
-        ? {
-            _id: menuItem._id,
-            name: menuItem.name,
-            price: menuItem.price,
-            imageUrl: menuItem.imageUrl,
-            description: menuItem.description,
-          }
-        : menuItem,
-      quantity: item.quantity,
-      restaurantId: item.restaurantId,
-    };
-  });
 
 exports.getCart = async (req, res) => {
   try {
     const { sessionId } = req.query;
-
     if (!sessionId) {
       return res.status(400).json({
         success: false,
@@ -33,18 +11,14 @@ exports.getCart = async (req, res) => {
       });
     }
 
-    let cart = await Cart.findOne({ sessionId }).populate('items.menuItemId');
-
-    if (!cart) {
-      cart = await Cart.create({
-        sessionId,
-        items: [],
-      });
-    }
+    const items = await CartItem.find({ sessionId }).populate('menuItemId');
+    
+    // Filter out items whose menuItem no longer exists
+    const validItems = items.filter(item => item.menuItemId);
 
     res.status(200).json({
       success: true,
-      data: formatCartItems(cart.items),
+      data: validItems,
     });
   } catch (error) {
     res.status(500).json({
@@ -56,9 +30,9 @@ exports.getCart = async (req, res) => {
 
 exports.addToCart = async (req, res) => {
   try {
-    const { sessionId, menuItemId, quantity, restaurantId } = req.body;
+    const { sessionId, menuItemId, branchId, quantity, selectedExtras = [] } = req.body;
 
-    if (!sessionId || !menuItemId || !quantity || !restaurantId) {
+    if (!sessionId || !menuItemId || !branchId || !quantity) {
       return res.status(400).json({
         success: false,
         message: 'Missing required fields',
@@ -73,46 +47,35 @@ exports.addToCart = async (req, res) => {
       });
     }
 
-    let cart = await Cart.findOne({ sessionId });
+    // Find if the same item with the same extras already exists in this session
+    const existingItems = await CartItem.find({ sessionId, menuItemId, branchId });
 
-    if (!cart) {
-      cart = await Cart.create({
+    const isSameExtras = (extrasA, extrasB) => {
+      if (extrasA.length !== extrasB.length) return false;
+      const sortedA = [...extrasA].sort((a, b) => a.name.localeCompare(b.name));
+      const sortedB = [...extrasB].sort((a, b) => a.name.localeCompare(b.name));
+      return sortedA.every((extra, idx) => extra.name === sortedB[idx].name && extra.price === sortedB[idx].price);
+    };
+
+    const matchedItem = existingItems.find(item => isSameExtras(item.selectedExtras, selectedExtras));
+
+    if (matchedItem) {
+      matchedItem.quantity += quantity;
+      await matchedItem.save();
+    } else {
+      await CartItem.create({
         sessionId,
-        restaurantId,
-        items: [],
-      });
-    }
-
-    if (cart.restaurantId && cart.restaurantId.toString() !== restaurantId) {
-      cart.items = [];
-      cart.restaurantId = restaurantId;
-    } else {
-      cart.restaurantId = restaurantId;
-    }
-
-    const existingItem = cart.items.find(
-      (item) => item.menuItemId.toString() === menuItemId
-    );
-
-    if (existingItem) {
-      existingItem.quantity += quantity;
-    } else {
-      cart.items.push({
         menuItemId,
+        branchId,
         quantity,
-        price: menuItem.price,
-        name: menuItem.name,
-        restaurantId,
+        selectedExtras,
       });
     }
 
-    await cart.save();
-
-    const populatedCart = await Cart.findById(cart._id).populate('items.menuItemId');
-
+    const updatedItems = await CartItem.find({ sessionId }).populate('menuItemId');
     res.status(200).json({
       success: true,
-      data: formatCartItems(populatedCart.items),
+      data: updatedItems.filter(item => item.menuItemId),
     });
   } catch (error) {
     res.status(500).json({
@@ -125,50 +88,41 @@ exports.addToCart = async (req, res) => {
 exports.updateCartItem = async (req, res) => {
   try {
     const { sessionId, quantity } = req.body;
-    const menuItemId = req.params.id;
+    const cartItemId = req.params.id;
 
-    if (!sessionId || !menuItemId) {
+    if (!sessionId) {
       return res.status(400).json({
         success: false,
-        message: 'Missing required fields',
+        message: 'Session ID is required',
       });
     }
 
-    const cart = await Cart.findOne({ sessionId });
+    // Attempt to find by cart item document _id first
+    let cartItem = await CartItem.findOne({ _id: cartItemId, sessionId });
 
-    if (!cart) {
-      return res.status(404).json({
-        success: false,
-        message: 'Cart not found',
-      });
+    // Fallback: if not found (e.g. legacy frontend request sending menuItemId), find by menuItemId
+    if (!cartItem) {
+      cartItem = await CartItem.findOne({ menuItemId: cartItemId, sessionId });
     }
 
-    const item = cart.items.find(
-      (item) => item.menuItemId.toString() === menuItemId
-    );
-
-    if (!item) {
+    if (!cartItem) {
       return res.status(404).json({
         success: false,
-        message: 'Item not in cart',
+        message: 'Cart item not found',
       });
     }
 
     if (quantity <= 0) {
-      cart.items = cart.items.filter(
-        (item) => item.menuItemId.toString() !== menuItemId
-      );
+      await CartItem.deleteOne({ _id: cartItem._id });
     } else {
-      item.quantity = quantity;
+      cartItem.quantity = quantity;
+      await cartItem.save();
     }
 
-    await cart.save();
-
-    const populatedCart = await Cart.findById(cart._id).populate('items.menuItemId');
-
+    const updatedItems = await CartItem.find({ sessionId }).populate('menuItemId');
     res.status(200).json({
       success: true,
-      data: formatCartItems(populatedCart.items),
+      data: updatedItems.filter(item => item.menuItemId),
     });
   } catch (error) {
     res.status(500).json({
@@ -181,35 +135,34 @@ exports.updateCartItem = async (req, res) => {
 exports.removeFromCart = async (req, res) => {
   try {
     const sessionId = req.body.sessionId || req.query.sessionId;
-    const menuItemId = req.params.id;
+    const cartItemId = req.params.id;
 
-    if (!sessionId || !menuItemId) {
+    if (!sessionId) {
       return res.status(400).json({
         success: false,
-        message: 'Missing required fields',
+        message: 'Session ID is required',
       });
     }
 
-    const cart = await Cart.findOne({ sessionId });
+    // Try finding by _id first, then by menuItemId as fallback
+    let cartItem = await CartItem.findOne({ _id: cartItemId, sessionId });
+    if (!cartItem) {
+      cartItem = await CartItem.findOne({ menuItemId: cartItemId, sessionId });
+    }
 
-    if (!cart) {
+    if (!cartItem) {
       return res.status(404).json({
         success: false,
-        message: 'Cart not found',
+        message: 'Cart item not found',
       });
     }
 
-    cart.items = cart.items.filter(
-      (item) => item.menuItemId.toString() !== menuItemId
-    );
+    await CartItem.deleteOne({ _id: cartItem._id });
 
-    await cart.save();
-
-    const populatedCart = await Cart.findById(cart._id).populate('items.menuItemId');
-
+    const updatedItems = await CartItem.find({ sessionId }).populate('menuItemId');
     res.status(200).json({
       success: true,
-      data: formatCartItems(populatedCart.items),
+      data: updatedItems.filter(item => item.menuItemId),
     });
   } catch (error) {
     res.status(500).json({
@@ -230,18 +183,7 @@ exports.clearCart = async (req, res) => {
       });
     }
 
-    const cart = await Cart.findOne({ sessionId });
-
-    if (!cart) {
-      return res.status(404).json({
-        success: false,
-        message: 'Cart not found',
-      });
-    }
-
-    cart.items = [];
-    cart.restaurantId = null;
-    await cart.save();
+    await CartItem.deleteMany({ sessionId });
 
     res.status(200).json({
       success: true,

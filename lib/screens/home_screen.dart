@@ -1,430 +1,352 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../models/models.dart';
-import '../providers/restaurant_provider.dart';
+import '../models/menu_item.dart';
+import '../providers/branch_provider.dart';
+import '../providers/menu_provider.dart';
 import '../providers/cart_provider.dart';
 import '../utils/helpers.dart';
-import '../widgets/restaurant_card.dart';
 import '../widgets/category_chip.dart';
-import 'restaurant_details_screen.dart';
+import '../widgets/menu_item_card.dart';
+import 'branch_selection_screen.dart';
+import 'food_details_screen.dart';
 import 'cart_screen.dart';
 
-// Home Screen showing location picker, category filters, search and list of restaurants
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({Key? key}) : super(key: key);
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final TextEditingController _searchController = TextEditingController();
-
   final List<Map<String, String>> _categories = [
-    {'name': 'All', 'icon': '🍽️'},
     {'name': 'Burger', 'icon': '🍔'},
     {'name': 'Pizza', 'icon': '🍕'},
-    {'name': 'Salad', 'icon': '🥗'},
+    {'name': 'Crepe', 'icon': '🥞'},
     {'name': 'Dessert', 'icon': '🍰'},
+    {'name': 'Drinks', 'icon': '🥤'},
   ];
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final size = MediaQuery.of(context).size;
+    final isMobile = ResponsiveUtil.isMobile(size.width);
+
+    final branchProvider = context.watch<BranchProvider>();
+    final selectedBranch = branchProvider.selectedBranch;
+
+    // Fallback: If somehow no branch is selected, redirect to BranchSelectionScreen
+    if (selectedBranch == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const BranchSelectionScreen()),
+        );
+      });
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
 
     return Scaffold(
-      body: SafeArea(
-        child: CustomScrollView(
-          physics: const BouncingScrollPhysics(),
-          slivers: [
-            // Custom App Bar (Location Selector & Cart Badge)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    // Location info
-                    Row(
+      appBar: AppBar(
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.location_on, color: Colors.white),
+            const SizedBox(width: 6),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Delivering from branch:',
+                  style: TextStyle(fontSize: 10, color: Colors.white70),
+                ),
+                Text(
+                  selectedBranch.name,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+        actions: [
+          TextButton.icon(
+            onPressed: () {
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (_) => const BranchSelectionScreen()),
+              );
+            },
+            icon: const Icon(Icons.swap_horiz, color: Colors.white),
+            label: const Text(
+              'Change',
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            ),
+          ),
+          const SizedBox(width: 8),
+        ],
+        backgroundColor: Colors.deepOrange,
+        elevation: 0,
+      ),
+      body: Center(
+        child: Container(
+          constraints: BoxConstraints(
+            maxWidth: isMobile ? double.infinity : 900,
+          ),
+          child: CustomScrollView(
+            physics: const BouncingScrollPhysics(),
+            slivers: [
+              // Hero Brand Banner
+              SliverToBoxAdapter(
+                child: Container(
+                  margin: const EdgeInsets.all(16),
+                  height: 160,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    image: const DecorationImage(
+                      image: NetworkImage(
+                        'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=1200&auto=format&fit=crop&q=80',
+                      ),
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20),
+                      gradient: LinearGradient(
+                        begin: Alignment.bottomRight,
+                        colors: [
+                          Colors.black.withOpacity(0.8),
+                          Colors.black.withOpacity(0.2),
+                        ],
+                      ),
+                    ),
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.end,
                       children: [
-                        Icon(
-                          Icons.location_on_rounded,
-                          color: theme.colorScheme.primary,
-                          size: 28,
+                        const Text(
+                          'Wassim Food',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 26,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                        const SizedBox(width: 8),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Deliver to',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: theme.colorScheme.onSurfaceVariant.withOpacity(0.6),
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Row(
-                              children: [
-                                Text(
-                                  '942 Maple Avenue, NY',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                    color: theme.colorScheme.onSurface,
-                                  ),
-                                ),
-                                const Icon(
-                                  Icons.keyboard_arrow_down_rounded,
-                                  size: 18,
-                                  color: Colors.grey,
-                                ),
-                              ],
-                            ),
-                          ],
+                        const SizedBox(height: 4),
+                        Text(
+                          'Casablanca\'s Finest Gourmet Burgers, Crepes & Pizzas',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.9),
+                            fontSize: 13,
+                          ),
                         ),
                       ],
                     ),
-                    // Shopping bag/cart badge
-                    Consumer<CartProvider>(
-                      builder: (context, cart, child) {
-                        return Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.shopping_bag_outlined, size: 28),
-                              onPressed: () {
-                                Navigator.of(context).pushNamed(CartScreen.routeName);
-                              },
-                            ),
-                            if (cart.totalQuantity > 0)
-                              Positioned(
-                                right: 6,
-                                top: 6,
-                                child: Container(
-                                  padding: const EdgeInsets.all(4),
-                                  decoration: BoxDecoration(
-                                    color: theme.colorScheme.primary,
-                                    shape: BoxShape.circle,
-                                    border: Border.all(color: Colors.white, width: 1.5),
-                                  ),
-                                  constraints: const BoxConstraints(
-                                    minWidth: 18,
-                                    minHeight: 18,
-                                  ),
-                                  child: Text(
-                                    '${cart.totalQuantity}',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 9,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ),
-                              ),
-                          ],
-                        );
-                      },
-                    ),
-                  ],
+                  ),
                 ),
               ),
-            ),
 
-            // Welcome/Greeting Title
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Hey Foodie! 👋',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: theme.colorScheme.onSurfaceVariant.withOpacity(0.7),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    const Text(
-                      'What are you craving today?',
-                      style: TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: -0.6,
-                        height: 1.2,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            // Search and Filter Layout
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-                child: Consumer<RestaurantProvider>(
-                  builder: (context, provider, child) {
-                    return Row(
-                      children: [
-                        Expanded(
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: theme.colorScheme.surfaceVariant.withOpacity(0.3),
-                              borderRadius: BorderRadius.circular(18),
-                            ),
-                            child: TextField(
-                              controller: _searchController,
-                              onChanged: (value) {
-                                provider.setSearchQuery(value);
-                              },
-                              decoration: InputDecoration(
-                                hintText: 'Search restaurants, dishes...',
-                                hintStyle: TextStyle(
-                                  color: theme.colorScheme.onSurfaceVariant.withOpacity(0.6),
-                                ),
-                                prefixIcon: Icon(
-                                  Icons.search_rounded,
-                                  color: theme.colorScheme.onSurfaceVariant.withOpacity(0.8),
-                                ),
-                                suffixIcon: _searchController.text.isNotEmpty
-                                    ? IconButton(
-                                        icon: const Icon(Icons.clear_rounded),
-                                        onPressed: () {
-                                          _searchController.clear();
-                                          provider.setSearchQuery('');
-                                        },
-                                      )
-                                    : null,
-                                border: InputBorder.none,
-                                contentPadding: const EdgeInsets.symmetric(vertical: 14),
-                              ),
-                            ),
+              // Categories Selector
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 16),
+                        child: Text(
+                          'Categories',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                        const SizedBox(width: 12),
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.primary.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(18),
-                          ),
-                          child: Icon(
-                            Icons.tune_rounded,
-                            color: theme.colorScheme.primary,
-                          ),
+                      ),
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        height: 50,
+                        child: Consumer<MenuProvider>(
+                          builder: (context, menuProvider, child) {
+                            return ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              padding: const EdgeInsets.only(left: 16, right: 8),
+                              itemCount: _categories.length,
+                              physics: const BouncingScrollPhysics(),
+                              itemBuilder: (context, index) {
+                                final cat = _categories[index];
+                                final name = cat['name']!;
+                                final icon = cat['icon']!;
+                                final isSelected = menuProvider.selectedCategory.toLowerCase() == name.toLowerCase();
+
+                                return CategoryChip(
+                                  label: '$icon  $name',
+                                  isSelected: isSelected,
+                                  onTap: () {
+                                    menuProvider.selectCategory(name);
+                                  },
+                                );
+                              },
+                            );
+                          },
                         ),
-                      ],
-                    );
-                  },
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
 
-            // Horizontal Categories Scroll Bar
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                child: SizedBox(
-                  height: 48,
-                  child: Consumer<RestaurantProvider>(
-                    builder: (context, provider, child) {
-                      return ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.only(left: 20, right: 8),
-                        itemCount: _categories.length,
-                        physics: const BouncingScrollPhysics(),
-                        itemBuilder: (context, index) {
-                          final category = _categories[index];
-                          final categoryName = category['name'] as String;
-                          final isSelected = provider.selectedCategory == categoryName;
-
-                          return CategoryChip(
-                            label: '${category['icon']}  $categoryName',
-                            isSelected: isSelected,
-                            onTap: () {
-                              provider.selectCategory(categoryName);
-                            },
-                          );
-                        },
+              // Menu Items List Title
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 8),
+                  child: Consumer<MenuProvider>(
+                    builder: (context, menuProvider, _) {
+                      return Text(
+                        '${menuProvider.selectedCategory} Menu',
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
                       );
                     },
                   ),
                 ),
               ),
-            ),
 
-            // Section Label
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.only(left: 20, right: 20, top: 20, bottom: 10),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Popular Restaurants',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: -0.4,
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: () {},
-                      child: Text(
-                        'See All',
-                        style: TextStyle(
-                          color: theme.colorScheme.primary,
-                          fontWeight: FontWeight.bold,
+              // Menu Items Grid/List
+              Consumer<MenuProvider>(
+                builder: (context, menuProvider, child) {
+                  if (menuProvider.isLoading) {
+                    return const SliverFillRemaining(
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.deepOrange),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+                    );
+                  }
 
-            // Restaurants list or Empty filter result screen
-            Consumer<RestaurantProvider>(
-              builder: (context, provider, child) {
-                if (provider.isLoading) {
-                  return const SliverFillRemaining(
-                    child: Center(
-                      child: CircularProgressIndicator(),
-                    ),
-                  );
-                }
-
-                if (provider.error != null) {
-                  return SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 30),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(
-                            Icons.error_outline_rounded,
-                            size: 80,
-                            color: Colors.red,
-                          ),
-                          const SizedBox(height: 16),
-                          const Text(
-                            'Failed to load restaurants',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
+                  if (menuProvider.error != null) {
+                    return SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                            const SizedBox(height: 16),
+                            const Text('Failed to load menu items'),
+                            const SizedBox(height: 8),
+                            ElevatedButton(
+                              onPressed: () => menuProvider.loadMenu(selectedBranch.id),
+                              child: const Text('Retry'),
                             ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            provider.error!,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: theme.colorScheme.onSurfaceVariant.withOpacity(0.6),
-                              fontSize: 14,
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                          FilledButton(
-                            onPressed: () => provider.fetchRestaurants(),
-                            child: const Text('Retry'),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                  );
-                }
+                    );
+                  }
 
-                final restaurants = provider.restaurants;
+                  final items = menuProvider.menuItems;
 
-                if (restaurants.isEmpty) {
-                  return SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 30),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.search_off_rounded,
-                            size: 80,
-                            color: theme.colorScheme.outline.withOpacity(0.4),
-                          ),
-                          const SizedBox(height: 16),
-                          const Text(
-                            'No Restaurants Found',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
+                  if (items.isEmpty) {
+                    return SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.no_food_outlined, size: 64, color: Colors.grey),
+                            const SizedBox(height: 16),
+                            Text(
+                              'No items in this category currently.',
+                              style: TextStyle(color: Colors.grey.shade600),
                             ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            "We couldn't find any matching restaurants. Try search for other foods or reset the category.",
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: theme.colorScheme.onSurfaceVariant.withOpacity(0.6),
-                              fontSize: 14,
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                          FilledButton(
-                            onPressed: () {
-                              _searchController.clear();
-                              provider.setSearchQuery('');
-                              provider.selectCategory('All');
-                            },
-                            child: const Text('Reset Filters'),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                  );
-                }
+                    );
+                  }
 
-                return SliverPadding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  sliver: SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        final restaurant = restaurants[index];
-                        return RestaurantCard(
-                          restaurant: restaurant,
-                          onTap: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => RestaurantDetailsScreen(
-                                  restaurant: restaurant,
+                  // Render list of items
+                  return SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    sliver: SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) {
+                          final item = items[index];
+                          return MenuItemCard(
+                            item: item,
+                            onTap: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => FoodDetailsScreen(menuItem: item),
                                 ),
-                              ),
-                            );
-                          },
-                        );
-                      },
-                      childCount: restaurants.length,
+                              );
+                            },
+                          );
+                        },
+                        childCount: items.length,
+                      ),
                     ),
-                  ),
-                );
-              },
-            ),
-            
-            // Bottom spacer for scroll comfort
-            const SliverToBoxAdapter(
-              child: SizedBox(height: 30),
-            ),
-          ],
+                  );
+                },
+              ),
+
+              const SliverToBoxAdapter(
+                child: SizedBox(height: 100),
+              ),
+            ],
+          ),
         ),
       ),
+      floatingActionButton: Consumer<CartProvider>(
+        builder: (context, cart, _) {
+          if (cart.totalQuantity == 0) return const SizedBox.shrink();
+
+          return Container(
+            constraints: const BoxConstraints(maxWidth: 500),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            width: size.width - 32,
+            child: FloatingActionButton.extended(
+              onPressed: () {
+                Navigator.of(context).pushNamed(CartScreen.routeName);
+              },
+              backgroundColor: Colors.deepOrange,
+              label: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Icon(Icons.shopping_cart, color: Colors.white),
+                  const SizedBox(width: 8),
+                  Text(
+                    'View Cart (${cart.totalQuantity} items)',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Text(
+                    CurrencyFormatter.formatDH(cart.subtotal),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
 }

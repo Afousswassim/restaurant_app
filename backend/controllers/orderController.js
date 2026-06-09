@@ -1,20 +1,19 @@
 const Order = require('../models/Order');
-const Cart = require('../models/Cart');
+const CartItem = require('../models/CartItem');
 
 exports.createOrder = async (req, res) => {
   try {
-    const { sessionId, customerName, phone, address, email, notes, restaurantId, deliveryFee, paymentMethod } = req.body;
+    const { sessionId, customerName, phone, address, branch, paymentMethod, notes } = req.body;
 
-    if (!sessionId || !customerName || !phone || !address || !restaurantId) {
+    if (!sessionId || !customerName || !phone || !address || !branch) {
       return res.status(400).json({
         success: false,
         message: 'Missing required fields',
       });
     }
 
-    const cart = await Cart.findOne({ sessionId });
-
-    if (!cart || cart.items.length === 0) {
+    const cartItems = await CartItem.find({ sessionId }).populate('menuItemId');
+    if (cartItems.length === 0) {
       return res.status(400).json({
         success: false,
         message: 'Cart is empty',
@@ -22,35 +21,46 @@ exports.createOrder = async (req, res) => {
     }
 
     let subtotal = 0;
-    const orderItems = cart.items.map((item) => {
-      const itemTotal = item.price * item.quantity;
-      subtotal += itemTotal;
+    const items = cartItems.map((item) => {
+      const extrasCost = item.selectedExtras.reduce((sum, extra) => sum + extra.price, 0);
+      const itemPrice = item.menuItemId.price + extrasCost;
+      const totalItemCost = itemPrice * item.quantity;
+      subtotal += totalItemCost;
+
       return {
-        menuItemId: item.menuItemId,
-        name: item.name,
+        menuItemId: item.menuItemId._id,
+        name: item.menuItemId.name,
         quantity: item.quantity,
-        price: item.price,
+        price: item.menuItemId.price,
+        selectedExtras: item.selectedExtras,
       };
     });
 
-    const totalAmount = subtotal + (deliveryFee || 15);
+    const deliveryFee = Number(branch.deliveryFee) || 0;
+    const totalAmount = subtotal + deliveryFee;
 
     const order = await Order.create({
       customerName,
       phone,
       address,
-      email: email || '',
-      items: orderItems,
-      restaurantId,
+      branch: {
+        id: branch.id || branch._id,
+        name: branch.name,
+        address: branch.address,
+        deliveryFee: deliveryFee,
+        deliveryTime: branch.deliveryTime,
+      },
+      items,
       subtotal,
-      deliveryFee: deliveryFee || 15,
+      deliveryFee,
       totalAmount,
+      status: 'pending',
       paymentMethod: paymentMethod || 'cash',
       notes: notes || '',
     });
 
-    cart.items = [];
-    await cart.save();
+    // Clear cart for the session
+    await CartItem.deleteMany({ sessionId });
 
     res.status(201).json({
       success: true,
@@ -67,14 +77,12 @@ exports.createOrder = async (req, res) => {
 exports.getOrder = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
-
     if (!order) {
       return res.status(404).json({
         success: false,
         message: 'Order not found',
       });
     }
-
     res.status(200).json({
       success: true,
       data: order,
@@ -89,10 +97,7 @@ exports.getOrder = async (req, res) => {
 
 exports.getAllOrders = async (req, res) => {
   try {
-    const orders = await Order.find()
-      .sort({ createdAt: -1 })
-      .limit(50);
-
+    const orders = await Order.find().sort({ createdAt: -1 }).limit(50);
     res.status(200).json({
       success: true,
       data: orders,
@@ -117,12 +122,7 @@ exports.updateOrderStatus = async (req, res) => {
       });
     }
 
-    const order = await Order.findByIdAndUpdate(
-      id,
-      { status },
-      { new: true }
-    );
-
+    const order = await Order.findByIdAndUpdate(id, { status }, { new: true });
     if (!order) {
       return res.status(404).json({
         success: false,

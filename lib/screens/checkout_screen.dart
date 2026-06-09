@@ -6,16 +6,9 @@ import '../utils/helpers.dart';
 import 'order_success_screen.dart';
 
 class CheckoutScreen extends StatefulWidget {
-  final double subtotal;
-  final double deliveryFee;
-  final double total;
+  static const routeName = '/checkout';
 
-  const CheckoutScreen({
-    Key? key,
-    required this.subtotal,
-    required this.deliveryFee,
-    required this.total,
-  }) : super(key: key);
+  const CheckoutScreen({Key? key}) : super(key: key);
 
   @override
   State<CheckoutScreen> createState() => _CheckoutScreenState();
@@ -26,7 +19,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _addressController = TextEditingController();
-  final _emailController = TextEditingController();
   final _notesController = TextEditingController();
   String _paymentMethod = 'cash';
   bool _isProcessing = false;
@@ -36,7 +28,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     _nameController.dispose();
     _phoneController.dispose();
     _addressController.dispose();
-    _emailController.dispose();
     _notesController.dispose();
     super.dispose();
   }
@@ -44,26 +35,27 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   Future<void> _submitOrder() async {
     if (!_formKey.currentState!.validate()) return;
 
+    final cartProvider = context.read<CartProvider>();
+    final orderProvider = context.read<OrderProvider>();
+
+    final selectedBranch = cartProvider.selectedBranch;
+    if (selectedBranch == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a branch first.')),
+      );
+      return;
+    }
+
     setState(() => _isProcessing = true);
 
     try {
-      final cartProvider = context.read<CartProvider>();
-      final orderProvider = context.read<OrderProvider>();
-
-      if (cartProvider.restaurantId == null) {
-        throw Exception('No restaurant selected');
-      }
-
       await orderProvider.createOrder(
-        sessionId: SessionManager.sessionId,
-        customerName: _nameController.text,
-        phone: _phoneController.text,
-        address: _addressController.text,
-        restaurantId: cartProvider.restaurantId!,
-        email: _emailController.text,
-        notes: _notesController.text,
-        deliveryFee: widget.deliveryFee,
+        customerName: _nameController.text.trim(),
+        phone: _phoneController.text.trim(),
+        address: _addressController.text.trim(),
+        branch: selectedBranch,
         paymentMethod: _paymentMethod,
+        notes: _notesController.text.trim(),
       );
 
       if (!mounted) return;
@@ -73,18 +65,24 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
         if (!mounted) return;
 
-        Navigator.of(context).pushReplacement(
+        Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(
             builder: (_) => OrderSuccessScreen(
               order: orderProvider.currentOrder!,
             ),
           ),
+          (route) => false,
         );
+      } else if (orderProvider.error != null) {
+        throw Exception(orderProvider.error);
       }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
+        SnackBar(
+          content: Text('Failed to place order: $e'),
+          backgroundColor: Colors.red,
+        ),
       );
     } finally {
       if (mounted) {
@@ -95,28 +93,38 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final isMobile = ResponsiveUtil.isMobile(size.width);
+    final cartProvider = context.watch<CartProvider>();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Checkout'),
         backgroundColor: Colors.deepOrange,
         foregroundColor: Colors.white,
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildOrderSummary(),
-                const SizedBox(height: 24),
-                _buildDeliveryForm(),
-                const SizedBox(height: 24),
-                _buildPaymentMethod(),
-                const SizedBox(height: 24),
-                _buildSubmitButton(),
-              ],
+      body: Center(
+        child: Container(
+          constraints: BoxConstraints(
+            maxWidth: isMobile ? double.infinity : 600,
+          ),
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.all(20),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildOrderSummary(cartProvider),
+                  const SizedBox(height: 24),
+                  _buildDeliveryForm(),
+                  const SizedBox(height: 24),
+                  _buildPaymentMethod(),
+                  const SizedBox(height: 32),
+                  _buildSubmitButton(),
+                ],
+              ),
             ),
           ),
         ),
@@ -124,61 +132,67 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
-  Widget _buildOrderSummary() {
+  Widget _buildOrderSummary(CartProvider cartProvider) {
+    final branch = cartProvider.selectedBranch;
+
     return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 2,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            const Text(
               'Order Summary',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              style: TextStyle(
+                fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 16),
+            if (branch != null) ...[
+              const SizedBox(height: 4),
+              Text(
+                'Branch: ${branch.name}',
+                style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+              ),
+            ],
+            const Divider(height: 24),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Subtotal:'),
-                Text(CurrencyFormatter.formatDH(widget.subtotal)),
+                const Text('Subtotal'),
+                Text(CurrencyFormatter.formatDH(cartProvider.subtotal)),
               ],
             ),
             const SizedBox(height: 8),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Delivery Fee:'),
-                Text(CurrencyFormatter.formatDH(widget.deliveryFee)),
+                const Text('Delivery Fee'),
+                Text(CurrencyFormatter.formatDH(cartProvider.deliveryFee)),
               ],
             ),
-            const SizedBox(height: 12),
-            Container(
-              decoration: BoxDecoration(
-                border: Border(
-                  top: BorderSide(color: Colors.grey.shade300),
+            const Divider(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Total Amount',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
-              padding: const EdgeInsets.only(top: 12),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Total:',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                Text(
+                  CurrencyFormatter.formatDH(cartProvider.total),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.deepOrange,
                   ),
-                  Text(
-                    CurrencyFormatter.formatDH(widget.total),
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.deepOrange,
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ],
         ),
@@ -190,9 +204,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Delivery Information',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+        const Text(
+          'Delivery Details',
+          style: TextStyle(
+            fontSize: 18,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -202,81 +217,72 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           decoration: InputDecoration(
             labelText: 'Full Name *',
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(12),
             ),
+            prefixIcon: const Icon(Icons.person_outline),
           ),
           validator: (value) {
-            if (value?.isEmpty ?? true) return 'Name is required';
+            if (value == null || value.trim().isEmpty) {
+              return 'Please enter your full name';
+            }
             return null;
           },
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 16),
         TextFormField(
           controller: _phoneController,
           decoration: InputDecoration(
             labelText: 'Phone Number *',
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(12),
             ),
+            prefixIcon: const Icon(Icons.phone_outlined),
           ),
           keyboardType: TextInputType.phone,
           validator: (value) {
-            if (value?.isEmpty ?? true) return 'Phone is required';
-            if (!ValidationUtil.isValidPhone(value!)) {
-              return 'Invalid phone number';
+            if (value == null || value.trim().isEmpty) {
+              return 'Please enter your phone number';
+            }
+            if (!ValidationUtil.isValidPhone(value)) {
+              return 'Please enter a valid phone number (10+ digits)';
             }
             return null;
           },
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 16),
         TextFormField(
           controller: _addressController,
           decoration: InputDecoration(
             labelText: 'Delivery Address *',
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(12),
             ),
+            prefixIcon: const Icon(Icons.home_outlined),
           ),
           minLines: 2,
           maxLines: 3,
           validator: (value) {
-            if (value?.isEmpty ?? true) return 'Address is required';
-            if (!ValidationUtil.isValidAddress(value!)) {
-              return 'Address must be at least 5 characters';
+            if (value == null || value.trim().isEmpty) {
+              return 'Please enter your delivery address';
+            }
+            if (!ValidationUtil.isValidAddress(value)) {
+              return 'Address must be at least 5 characters long';
             }
             return null;
           },
         ),
-        const SizedBox(height: 12),
-        TextFormField(
-          controller: _emailController,
-          decoration: InputDecoration(
-            labelText: 'Email (Optional)',
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-          keyboardType: TextInputType.emailAddress,
-          validator: (value) {
-            if (value?.isNotEmpty ?? false) {
-              if (!ValidationUtil.isValidEmail(value!)) {
-                return 'Invalid email';
-              }
-            }
-            return null;
-          },
-        ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 16),
         TextFormField(
           controller: _notesController,
           decoration: InputDecoration(
-            labelText: 'Delivery Notes (Optional)',
-            hintText: 'e.g., Ring the doorbell twice',
+            labelText: 'Special Instructions (Optional)',
+            hintText: 'e.g. Leave at front door',
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(12),
             ),
+            prefixIcon: const Icon(Icons.note_alt_outlined),
           ),
-          minLines: 2,
+          minLines: 1,
           maxLines: 3,
         ),
       ],
@@ -287,26 +293,35 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
+        const Text(
           'Payment Method',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+          style: TextStyle(
+            fontSize: 18,
             fontWeight: FontWeight.bold,
           ),
         ),
         const SizedBox(height: 12),
-        RadioListTile<String>(
-          title: const Text('Cash on Delivery'),
-          value: 'cash',
-          groupValue: _paymentMethod,
-          onChanged: (value) => setState(() => _paymentMethod = value!),
-          controlAffinity: ListTileControlAffinity.leading,
-        ),
-        RadioListTile<String>(
-          title: const Text('Credit/Debit Card'),
-          value: 'card',
-          groupValue: _paymentMethod,
-          onChanged: (value) => setState(() => _paymentMethod = value!),
-          controlAffinity: ListTileControlAffinity.leading,
+        Card(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          child: Column(
+            children: [
+              RadioListTile<String>(
+                title: const Text('Cash on Delivery'),
+                value: 'cash',
+                groupValue: _paymentMethod,
+                activeColor: Colors.deepOrange,
+                onChanged: (value) => setState(() => _paymentMethod = value!),
+              ),
+              const Divider(height: 1),
+              RadioListTile<String>(
+                title: const Text('Credit/Debit Card (on delivery)'),
+                value: 'card',
+                groupValue: _paymentMethod,
+                activeColor: Colors.deepOrange,
+                onChanged: (value) => setState(() => _paymentMethod = value!),
+              ),
+            ],
+          ),
         ),
       ],
     );
@@ -319,25 +334,29 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         onPressed: _isProcessing ? null : _submitOrder,
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.deepOrange,
+          foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          elevation: 2,
         ),
         child: _isProcessing
             ? const SizedBox(
-          width: 20,
-          height: 20,
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-          ),
-        )
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2.5,
+                ),
+              )
             : const Text(
-          'Place Order',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+                'Confirm Order',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
       ),
     );
   }

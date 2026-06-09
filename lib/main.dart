@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'providers/restaurant_provider.dart';
+import 'providers/branch_provider.dart';
+import 'providers/menu_provider.dart';
 import 'providers/cart_provider.dart';
 import 'providers/order_provider.dart';
 import 'screens/splash_screen.dart';
@@ -20,12 +21,17 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => RestaurantProvider()),
-        ChangeNotifierProvider(create: (_) => CartProvider()),
+        ChangeNotifierProvider(create: (_) => BranchProvider()),
+        ChangeNotifierProvider(create: (_) => MenuProvider()),
+        ChangeNotifierProxyProvider<BranchProvider, CartProvider>(
+          create: (_) => CartProvider(),
+          update: (_, branchProvider, cartProvider) =>
+              cartProvider!..updateBranch(branchProvider.selectedBranch),
+        ),
         ChangeNotifierProvider(create: (_) => OrderProvider()),
       ],
       child: MaterialApp(
-        title: 'Food Delivery',
+        title: 'Wassim Food',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           useMaterial3: true,

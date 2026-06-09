@@ -1,10 +1,29 @@
 const mongoose = require('mongoose');
 
 const orderItemSchema = new mongoose.Schema({
-  menuItemId: mongoose.Schema.Types.ObjectId,
-  name: String,
-  quantity: Number,
-  price: Number,
+  menuItemId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'MenuItem',
+    required: true,
+  },
+  name: {
+    type: String,
+    required: true,
+  },
+  quantity: {
+    type: Number,
+    required: true,
+  },
+  price: {
+    type: Number,
+    required: true,
+  },
+  selectedExtras: [
+    {
+      name: String,
+      price: Number,
+    },
+  ],
 });
 
 const orderSchema = new mongoose.Schema(
@@ -22,16 +41,14 @@ const orderSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    email: {
-      type: String,
-      default: '',
+    branch: {
+      id: String,
+      name: String,
+      address: String,
+      deliveryFee: Number,
+      deliveryTime: String,
     },
     items: [orderItemSchema],
-    restaurantId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Restaurant',
-      required: true,
-    },
     subtotal: {
       type: Number,
       required: true,
@@ -46,24 +63,19 @@ const orderSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['pending', 'confirmed', 'preparing', 'on-way', 'delivered', 'cancelled'],
       default: 'pending',
     },
     paymentMethod: {
       type: String,
-      enum: ['cash', 'card'],
       default: 'cash',
     },
     notes: {
       type: String,
       default: '',
     },
-    estimatedDeliveryTime: {
-      type: Number,
-      default: 30,
-    },
   },
   { timestamps: true }
 );
 
-module.exports = mongoose.model('Order', orderSchema);
+module.exports = mongoose.model('Order', orderSchema, 'orders');
+

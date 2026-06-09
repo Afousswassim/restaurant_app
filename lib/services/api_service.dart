@@ -1,6 +1,9 @@
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import '../models/models.dart';
+import '../models/branch.dart';
+import '../models/menu_item.dart';
+import '../models/cart_item.dart';
+import '../models/order.dart';
 
 class ApiService {
   static const String baseUrl = 'http://localhost:5000';
@@ -92,112 +95,116 @@ class ApiService {
     }
   }
 
-  static List<CartItem> _parseCartItems(dynamic data) {
-    if (data == null) return [];
-    if (data is! List) return [];
-
-    return data
-        .map((item) => CartItem.fromJson(item as Map<String, dynamic>))
+  // Branch endpoints
+  static Future<List<Branch>> getBranches() async {
+    final data = await _makeRequest('GET', '/branches');
+    return (data as List)
+        .map((item) => Branch.fromJson(item as Map<String, dynamic>))
         .toList();
-  }
-
-  // Restaurant endpoints
-  static Future<List<Restaurant>> getRestaurants() async {
-    final data = await _makeRequest('GET', '/restaurants');
-    return List.from(data)
-        .map((item) => Restaurant.fromJson(item as Map<String, dynamic>))
-        .toList();
-  }
-
-  static Future<dynamic> getRestaurantById(String id) async {
-    return await _makeRequest('GET', '/restaurants/$id');
   }
 
   // Menu endpoints
-  static Future<List<MenuItem>> getMenuByRestaurant(String restaurantId) async {
-    final data = await _makeRequest('GET', '/menu/$restaurantId');
-    return List.from(data)
+  static Future<List<MenuItem>> getMenu() async {
+    final data = await _makeRequest('GET', '/menu');
+    return (data as List)
         .map((item) => MenuItem.fromJson(item as Map<String, dynamic>))
         .toList();
   }
 
-  static Future<dynamic> getMenuItemById(String id) async {
-    return await _makeRequest('GET', '/menu/item/$id');
+  static Future<List<MenuItem>> getMenuByBranch(String branchId) async {
+    final data = await _makeRequest('GET', '/menu/$branchId');
+    return (data as List)
+        .map((item) => MenuItem.fromJson(item as Map<String, dynamic>))
+        .toList();
   }
 
   // Cart endpoints
   static Future<List<CartItem>> getCart(String sessionId) async {
     final data = await _makeRequest('GET', '/cart?sessionId=$sessionId');
-    return _parseCartItems(data);
+    return (data as List)
+        .map((item) => CartItem.fromJson(item as Map<String, dynamic>))
+        .toList();
   }
 
-  static Future<void> addToCart({
+  static Future<List<CartItem>> addToCart({
     required String sessionId,
     required String menuItemId,
+    required String branchId,
     required int quantity,
-    required String restaurantId,
+    required List<ExtraOption> selectedExtras,
   }) async {
-    await _makeRequest(
+    final data = await _makeRequest(
       'POST',
       '/cart',
       body: {
         'sessionId': sessionId,
         'menuItemId': menuItemId,
+        'branchId': branchId,
         'quantity': quantity,
-        'restaurantId': restaurantId,
+        'selectedExtras': selectedExtras.map((e) => e.toJson()).toList(),
       },
     );
+    return (data as List)
+        .map((item) => CartItem.fromJson(item as Map<String, dynamic>))
+        .toList();
   }
 
-  static Future<void> updateCartItem({
+  static Future<List<CartItem>> updateCartItem({
     required String sessionId,
-    required String menuItemId,
+    required String cartItemId,
     required int quantity,
   }) async {
-    await _makeRequest(
+    final data = await _makeRequest(
       'PUT',
-      '/cart/$menuItemId',
+      '/cart/$cartItemId',
       body: {
         'sessionId': sessionId,
         'quantity': quantity,
       },
     );
+    return (data as List)
+        .map((item) => CartItem.fromJson(item as Map<String, dynamic>))
+        .toList();
   }
 
-  static Future<void> removeFromCart({
+  static Future<List<CartItem>> removeFromCart({
     required String sessionId,
-    required String menuItemId,
+    required String cartItemId,
   }) async {
-    await _makeRequest(
+    final data = await _makeRequest(
       'DELETE',
-      '/cart/$menuItemId',
+      '/cart/$cartItemId',
       body: {
         'sessionId': sessionId,
       },
     );
+    return (data as List)
+        .map((item) => CartItem.fromJson(item as Map<String, dynamic>))
+        .toList();
   }
 
-  static Future<void> clearCart(String sessionId) async {
-    await _makeRequest(
+  static Future<List<CartItem>> clearCart(String sessionId) async {
+    final data = await _makeRequest(
       'DELETE',
       '/cart',
       body: {'sessionId': sessionId},
     );
+    return (data as List)
+        .map((item) => CartItem.fromJson(item as Map<String, dynamic>))
+        .toList();
   }
 
   // Order endpoints
-  static Future<dynamic> createOrder({
+  static Future<Order> createOrder({
     required String sessionId,
     required String customerName,
     required String phone,
     required String address,
-    required String restaurantId,
-    String? email,
-    String? notes,
-    double? deliveryFee,
+    required Branch branch,
     String? paymentMethod,
+    String? notes,
   }) async {
-    return await _makeRequest(
+    final data = await _makeRequest(
       'POST',
       '/orders',
       body: {
@@ -205,32 +212,23 @@ class ApiService {
         'customerName': customerName,
         'phone': phone,
         'address': address,
-        'restaurantId': restaurantId,
-        'email': email ?? '',
-        'notes': notes ?? '',
-        'deliveryFee': deliveryFee ?? 15,
+        'branch': branch.toJson(),
         'paymentMethod': paymentMethod ?? 'cash',
+        'notes': notes ?? '',
       },
     );
+    return Order.fromJson(data as Map<String, dynamic>);
   }
 
-  static Future<dynamic> getOrder(String orderId) async {
-    return await _makeRequest('GET', '/orders/$orderId');
+  static Future<Order> getOrder(String orderId) async {
+    final data = await _makeRequest('GET', '/orders/$orderId');
+    return Order.fromJson(data as Map<String, dynamic>);
   }
 
-  static Future<List<dynamic>> getAllOrders() async {
+  static Future<List<Order>> getAllOrders() async {
     final data = await _makeRequest('GET', '/orders');
-    return List.from(data);
-  }
-
-  static Future<dynamic> updateOrderStatus(
-    String orderId,
-    String status,
-  ) async {
-    return await _makeRequest(
-      'PUT',
-      '/orders/$orderId/status',
-      body: {'status': status},
-    );
+    return (data as List)
+        .map((item) => Order.fromJson(item as Map<String, dynamic>))
+        .toList();
   }
 }

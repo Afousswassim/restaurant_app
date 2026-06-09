@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/restaurant_provider.dart';
 import '../providers/cart_provider.dart';
-import 'home_screen.dart';
+import 'branch_selection_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({Key? key}) : super(key: key);
@@ -39,24 +38,19 @@ class _SplashScreenState extends State<SplashScreen>
     if (!mounted) return;
 
     try {
-      await context.read<CartProvider>().initializeCart();
-      await context.read<RestaurantProvider>().fetchRestaurants();
+      await context.read<CartProvider>().loadCart();
 
       if (!mounted) return;
 
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const HomeScreen()),
+        MaterialPageRoute(builder: (_) => const BranchSelectionScreen()),
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
+      // Navigate to branch selection even if cart fails to load (offline/dev)
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const BranchSelectionScreen()),
       );
-      Future.delayed(const Duration(seconds: 2), () {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const HomeScreen()),
-        );
-      });
     }
   }
 
@@ -86,23 +80,32 @@ class _SplashScreenState extends State<SplashScreen>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  Icons.restaurant,
-                  size: 80,
+                const Icon(
+                  Icons.restaurant_menu,
+                  size: 100,
                   color: Colors.white,
                 ),
                 const SizedBox(height: 20),
                 Text(
-                  'Food Delivery',
+                  'Wassim Food',
                   style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
+                    letterSpacing: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Legendary Flavor',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: Colors.white.withOpacity(0.8),
+                    fontStyle: FontStyle.italic,
                   ),
                 ),
                 const SizedBox(height: 40),
                 SizedBox(
-                  width: 50,
-                  height: 50,
+                  width: 40,
+                  height: 40,
                   child: CircularProgressIndicator(
                     valueColor:
                         AlwaysStoppedAnimation<Color>(Colors.white.withOpacity(0.7)),

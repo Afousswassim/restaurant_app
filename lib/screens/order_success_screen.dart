@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import '../models/models.dart';
+import '../models/order.dart';
 import '../utils/helpers.dart';
+import 'splash_screen.dart';
 
 class OrderSuccessScreen extends StatefulWidget {
   final Order order;
@@ -36,25 +37,35 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen>
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final isMobile = ResponsiveUtil.isMobile(size.width);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Order Confirmed'),
         backgroundColor: Colors.green,
         foregroundColor: Colors.white,
         automaticallyImplyLeading: false,
+        centerTitle: true,
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              const SizedBox(height: 20),
-              _buildSuccessAnimation(),
-              const SizedBox(height: 40),
-              _buildOrderDetails(),
-              const SizedBox(height: 24),
-              _buildActionButtons(context),
-            ],
+      body: Center(
+        child: Container(
+          constraints: BoxConstraints(
+            maxWidth: isMobile ? double.infinity : 600,
+          ),
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              children: [
+                const SizedBox(height: 20),
+                _buildSuccessAnimation(),
+                const SizedBox(height: 32),
+                _buildOrderDetails(),
+                const SizedBox(height: 32),
+                _buildActionButtons(context),
+              ],
+            ),
           ),
         ),
       ),
@@ -75,7 +86,7 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen>
         ),
         child: const Icon(
           Icons.check_circle,
-          size: 60,
+          size: 64,
           color: Colors.green,
         ),
       ),
@@ -84,42 +95,37 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen>
 
   Widget _buildOrderDetails() {
     return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 2,
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Order Details',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+            const Text(
+              'Order Summary',
+              style: TextStyle(
+                fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 16),
+            const Divider(height: 24),
             _buildDetailRow('Order ID:', widget.order.id),
+            _buildDetailRow('Branch:', widget.order.branch.name),
             _buildDetailRow('Customer Name:', widget.order.customerName),
-            _buildDetailRow('Phone:', widget.order.phone),
+            _buildDetailRow('Phone Number:', widget.order.phone),
             _buildDetailRow('Address:', widget.order.address),
             _buildDetailRow('Subtotal:', CurrencyFormatter.formatDH(widget.order.subtotal)),
             _buildDetailRow('Delivery Fee:', CurrencyFormatter.formatDH(widget.order.deliveryFee)),
-            Container(
-              decoration: BoxDecoration(
-                border: Border(
-                  top: BorderSide(color: Colors.grey.shade300),
-                ),
-              ),
-              padding: const EdgeInsets.only(top: 12),
-              child: _buildDetailRow(
-                'Total Amount:',
-                CurrencyFormatter.formatDH(widget.order.totalAmount),
-                isBold: true,
-                isHighlighted: true,
-              ),
+            const Divider(height: 24),
+            _buildDetailRow(
+              'Total Amount:',
+              CurrencyFormatter.formatDH(widget.order.totalAmount),
+              isBold: true,
+              isHighlighted: true,
             ),
-            const SizedBox(height: 12),
-            _buildDetailRow('Status:', widget.order.statusDisplay),
-            _buildDetailRow('Payment Method:', widget.order.paymentMethod == 'cash' ? 'Cash on Delivery' : 'Card Payment'),
-            _buildDetailRow('Estimated Delivery:', '${widget.order.estimatedDeliveryTime} minutes'),
+            _buildDetailRow('Payment Method:', widget.order.paymentMethod == 'cash' ? 'Cash on Delivery' : 'Credit/Debit Card'),
+            _buildDetailRow('Delivery Time:', widget.order.branch.deliveryTime),
           ],
         ),
       ),
@@ -133,7 +139,7 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen>
     bool isHighlighted = false,
   }) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -148,10 +154,11 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen>
           Expanded(
             child: Text(
               value,
+              textAlign: TextAlign.end,
               style: TextStyle(
                 fontSize: isBold ? 14 : 13,
-                color: isHighlighted ? Colors.deepOrange : null,
-                fontWeight: isHighlighted ? FontWeight.bold : FontWeight.normal,
+                color: isHighlighted ? Colors.deepOrange : Colors.grey.shade700,
+                fontWeight: isHighlighted || isBold ? FontWeight.bold : FontWeight.normal,
               ),
             ),
           ),
@@ -166,36 +173,24 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen>
       children: [
         ElevatedButton(
           onPressed: () {
-            Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (_) => const SplashScreen()),
+              (route) => false,
+            );
           },
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.deepOrange,
+            foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(vertical: 16),
-          ),
-          child: const Text(
-            'Back to Home',
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
             ),
-          ),
-        ),
-        const SizedBox(height: 12),
-        OutlinedButton(
-          onPressed: () {
-            // Can implement order tracking here
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Track order feature coming soon')),
-            );
-          },
-          style: OutlinedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            side: const BorderSide(color: Colors.deepOrange),
+            elevation: 2,
           ),
           child: const Text(
-            'Track Order',
+            'Back to Menu',
             style: TextStyle(
-              color: Colors.deepOrange,
+              fontSize: 16,
               fontWeight: FontWeight.bold,
             ),
           ),

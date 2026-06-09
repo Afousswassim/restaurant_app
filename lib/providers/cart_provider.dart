@@ -1,35 +1,35 @@
 import 'package:flutter/material.dart';
-import '../models/models.dart';
+import '../models/branch.dart';
+import '../models/cart_item.dart';
+import '../models/menu_item.dart';
 import '../services/api_service.dart';
 import '../utils/helpers.dart';
 
 class CartProvider with ChangeNotifier {
   List<CartItem> _items = [];
+  Branch? _selectedBranch;
   bool _isLoading = false;
   String? _error;
 
+  List<CartItem> get cartItems => _items;
   List<CartItem> get items => _items;
+  Branch? get selectedBranch => _selectedBranch;
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  int get itemCount => _items.length;
-  int get totalQuantity => _items.fold(0, (sum, item) => sum + item.quantity);
-  double get subtotal => _items.fold(0, (sum, item) => sum + item.totalPrice);
-  double get totalAmount => subtotal + 15;
-
-  String? get restaurantId => _items.isEmpty ? null : _items.first.restaurantId;
-
-  Future<void> initializeCart() async {
-    await SessionManager.ensureSession();
-    await loadCart();
+  void updateBranch(Branch? branch) {
+    _selectedBranch = branch;
+    notifyListeners();
   }
+
+  double get subtotal => _items.fold(0.0, (sum, item) => sum + item.totalPrice);
+  double get deliveryFee => _selectedBranch?.deliveryFee ?? 0.0;
+  double get total => subtotal + deliveryFee;
+
+  int get totalQuantity => _items.fold(0, (sum, item) => sum + item.quantity);
 
   Future<void> loadCart() async {
     await SessionManager.ensureSession();
-    await fetchCart();
-  }
-
-  Future<void> fetchCart() async {
     _isLoading = true;
     _error = null;
     notifyListeners();
@@ -46,74 +46,110 @@ class CartProvider with ChangeNotifier {
     }
   }
 
-  Future<void> addToCart({
-    required MenuItem menuItem,
-    required String restaurantId,
-    int quantity = 1,
-  }) async {
+  Future<void> addToCart(MenuItem item, Branch branch, int quantity, List<ExtraOption> extras) async {
     await SessionManager.ensureSession();
+    _isLoading = true;
     _error = null;
+    notifyListeners();
 
     try {
-      await ApiService.addToCart(
+      _items = await ApiService.addToCart(
         sessionId: SessionManager.sessionId,
-        menuItemId: menuItem.id,
+        menuItemId: item.id,
+        branchId: branch.id,
         quantity: quantity,
-        restaurantId: restaurantId,
+        selectedExtras: extras,
       );
-      await fetchCart();
+      _error = null;
     } catch (e) {
       _error = e.toString();
+    } finally {
+      _isLoading = false;
       notifyListeners();
-      rethrow;
     }
   }
 
-  Future<void> updateQuantity(String menuItemId, int quantity) async {
-    if (quantity <= 0) {
-      await removeItem(menuItemId);
+  Future<void> increaseQuantity(CartItem cartItem) async {
+    await SessionManager.ensureSession();
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      _items = await ApiService.updateCartItem(
+        sessionId: SessionManager.sessionId,
+        cartItemId: cartItem.id,
+        quantity: cartItem.quantity + 1,
+      );
+      _error = null;
+    } catch (e) {
+      _error = e.toString();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> decreaseQuantity(CartItem cartItem) async {
+    await SessionManager.ensureSession();
+    if (cartItem.quantity <= 1) {
+      await removeItem(cartItem);
       return;
     }
+
+    _isLoading = true;
     _error = null;
+    notifyListeners();
+
     try {
-      await ApiService.updateCartItem(
+      _items = await ApiService.updateCartItem(
         sessionId: SessionManager.sessionId,
-        menuItemId: menuItemId,
-        quantity: quantity,
+        cartItemId: cartItem.id,
+        quantity: cartItem.quantity - 1,
       );
-      await fetchCart();
+      _error = null;
     } catch (e) {
       _error = e.toString();
+    } finally {
+      _isLoading = false;
       notifyListeners();
     }
   }
 
-  Future<void> removeItem(String menuItemId) async {
+  Future<void> removeItem(CartItem cartItem) async {
+    await SessionManager.ensureSession();
+    _isLoading = true;
     _error = null;
+    notifyListeners();
+
     try {
-      await ApiService.removeFromCart(
+      _items = await ApiService.removeFromCart(
         sessionId: SessionManager.sessionId,
-        menuItemId: menuItemId,
+        cartItemId: cartItem.id,
       );
-      await fetchCart();
+      _error = null;
     } catch (e) {
       _error = e.toString();
+    } finally {
+      _isLoading = false;
       notifyListeners();
     }
   }
 
   Future<void> clearCart() async {
+    await SessionManager.ensureSession();
+    _isLoading = true;
     _error = null;
+    notifyListeners();
+
     try {
-      await ApiService.clearCart(SessionManager.sessionId);
-      await fetchCart();
+      _items = await ApiService.clearCart(SessionManager.sessionId);
+      _error = null;
     } catch (e) {
       _error = e.toString();
+    } finally {
+      _isLoading = false;
       notifyListeners();
     }
-  }
-
-  bool hasRestaurantItems(String restaurantId) {
-    return _items.isEmpty || _items.first.restaurantId == restaurantId;
   }
 }

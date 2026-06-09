@@ -1,80 +1,47 @@
+import 'menu_item.dart';
+
 class CartItem {
   final String id;
-  final String menuItemId;
-  final String name;
-  final double price;
-  final String imageUrl;
+  final MenuItem menuItem;
+  final String branchId;
   final int quantity;
-  final String restaurantId;
+  final List<ExtraOption> selectedExtras;
 
   CartItem({
     required this.id,
-    required this.menuItemId,
-    required this.name,
-    required this.price,
-    required this.imageUrl,
+    required this.menuItem,
+    required this.branchId,
     required this.quantity,
-    required this.restaurantId,
+    required this.selectedExtras,
   });
 
   factory CartItem.fromJson(Map<String, dynamic> json) {
-    String mId = '';
-    String mName = json['name']?.toString() ?? '';
-    double mPrice = _parseDouble(json['price']);
-    String mImageUrl = json['imageUrl']?.toString() ?? '';
-
-    final rawMenuItemId = json['menuItemId'];
-    if (rawMenuItemId is Map<String, dynamic>) {
-      mId = _parseId(rawMenuItemId['_id'] ?? rawMenuItemId['id']);
-      mName = rawMenuItemId['name']?.toString() ?? mName;
-      mPrice = _parseDouble(rawMenuItemId['price'] ?? mPrice);
-      mImageUrl = rawMenuItemId['imageUrl']?.toString() ?? mImageUrl;
-    } else {
-      mId = _parseId(rawMenuItemId);
-    }
+    var rawExtras = json['selectedExtras'] as List<dynamic>?;
+    List<ExtraOption> parsedExtras = rawExtras != null
+        ? rawExtras.map((e) => ExtraOption.fromJson(e as Map<String, dynamic>)).toList()
+        : [];
 
     return CartItem(
-      id: _parseId(json['_id'] ?? json['id']),
-      menuItemId: mId,
-      name: mName,
-      price: mPrice,
-      imageUrl: mImageUrl,
-      quantity: _parseInt(json['quantity']),
-      restaurantId: _parseId(json['restaurantId']),
+      id: json['_id'] ?? json['id'] ?? '',
+      menuItem: MenuItem.fromJson(json['menuItemId'] ?? {}),
+      branchId: json['branchId'] ?? '',
+      quantity: json['quantity'] ?? 1,
+      selectedExtras: parsedExtras,
     );
-  }
-
-  static String _parseId(dynamic value) {
-    if (value == null) return '';
-    if (value is String) return value;
-    if (value is Map) {
-      return value['_id']?.toString() ?? value['id']?.toString() ?? '';
-    }
-    return value.toString();
-  }
-
-  static double _parseDouble(dynamic value) {
-    if (value == null) return 0;
-    if (value is num) return value.toDouble();
-    return double.tryParse(value.toString()) ?? 0;
-  }
-
-  static int _parseInt(dynamic value) {
-    if (value == null) return 0;
-    if (value is int) return value;
-    if (value is num) return value.toInt();
-    return int.tryParse(value.toString()) ?? 0;
   }
 
   Map<String, dynamic> toJson() => {
     '_id': id,
-    'menuItemId': menuItemId,
-    'name': name,
-    'price': price,
-    'imageUrl': imageUrl,
+    'menuItemId': menuItem.toJson(),
+    'branchId': branchId,
     'quantity': quantity,
-    'restaurantId': restaurantId,
+    'selectedExtras': selectedExtras.map((e) => e.toJson()).toList(),
   };
 
-  double get totalPrice => price * quantity;
+  double get unitPrice {
+    double extrasPrice = selectedExtras.fold(0.0, (sum, extra) => sum + extra.price);
+    return menuItem.price + extrasPrice;
+  }
+
+  double get totalPrice => unitPrice * quantity;
 }

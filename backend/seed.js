@@ -1,7 +1,9 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
-const Restaurant = require('./models/Restaurant');
+const Branch = require('./models/Branch');
 const MenuItem = require('./models/MenuItem');
+const CartItem = require('./models/CartItem');
+const Order = require('./models/Order');
 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/food-delivery';
 
@@ -14,124 +16,199 @@ const seedDatabase = async () => {
 
     console.log('Connected to MongoDB');
 
-    // Clear existing data
-    await Restaurant.deleteMany({});
+    // Clear old data for test
+    await Branch.deleteMany({});
     await MenuItem.deleteMany({});
+    await CartItem.deleteMany({});
+    await Order.deleteMany({});
 
-    // Create restaurants
-    const restaurants = await Restaurant.create([
+    console.log('✅ Old branches, menu_items, cart_items, orders cleared');
+
+    // Insert 3 Casablanca branches
+    const branches = await Branch.create([
       {
-        name: 'Burger House',
-        description: 'Delicious and juicy craft burgers made with fresh ingredients',
-        imageUrl: 'https://source.unsplash.com/800x600/?burger',
-        rating: 4.7,
-        deliveryTime: 25,
+        name: 'Maarif Branch',
+        address: 'Maarif, Casablanca',
         deliveryFee: 15,
-        minOrder: 40,
-        cuisine: 'American',
-        category: 'Burger',
-        averagePrice: 65,
-        isOpen: true,
+        deliveryTime: '20-30 min',
       },
       {
-        name: 'Pizza Napoli',
-        description: 'Authentic stone-baked Italian pizzas',
-        imageUrl: 'https://source.unsplash.com/800x600/?pizza',
-        rating: 4.6,
-        deliveryTime: 30,
-        deliveryFee: 15,
-        minOrder: 50,
-        cuisine: 'Italian',
-        category: 'Pizza',
-        averagePrice: 80,
-        isOpen: true,
+        name: 'Ain Sebaa Branch',
+        address: 'Ain Sebaa, Casablanca',
+        deliveryFee: 20,
+        deliveryTime: '25-35 min',
       },
       {
-        name: 'Fresh Salad Bar',
-        description: 'Healthy and organic salad bowls',
-        imageUrl: 'https://source.unsplash.com/800x600/?salad',
-        rating: 4.4,
-        deliveryTime: 20,
-        deliveryFee: 10,
-        minOrder: 30,
-        cuisine: 'Healthy',
-        category: 'Salad',
-        averagePrice: 55,
-        isOpen: true,
-      },
-      {
-        name: 'Sweet Dessert',
-        description: 'Heavenly sweets, cakes, and treats',
-        imageUrl: 'https://source.unsplash.com/800x600/?dessert',
-        rating: 4.8,
-        deliveryTime: 25,
-        deliveryFee: 12,
-        minOrder: 30,
-        cuisine: 'French',
-        category: 'Dessert',
-        averagePrice: 45,
-        isOpen: true,
+        name: 'Sidi Maarouf Branch',
+        address: 'Sidi Maarouf, Casablanca',
+        deliveryFee: 25,
+        deliveryTime: '30-40 min',
       },
     ]);
 
-    console.log('✅ Restaurants created');
+    console.log('✅ 3 Branches created successfully');
 
-    // Create menu items for each restaurant
-    const menuData = [
-      // Burger House
+    // Define menu items
+    const menuItemsData = [
+      // Burger
       {
-        restaurantId: restaurants[0]._id,
-        items: [
-          { name: 'Cheeseburger Classic', description: 'Juicy beef patty with cheddar, lettuce, tomato and signature sauce', price: 55, category: 'Burger', imageUrl: 'https://source.unsplash.com/800x600/?burger' },
-          { name: 'Double Cheese Bacon', description: 'Double beef patty, crispy bacon, double cheddar cheese', price: 90, category: 'Burger', imageUrl: 'https://source.unsplash.com/800x600/?cheeseburger' },
-          { name: 'Crispy Fries', description: 'Crispy golden french fries served with dip', price: 35, category: 'Sides', imageUrl: 'https://source.unsplash.com/800x600/?fries' },
-          { name: 'Onion Rings', description: 'Golden battered onion rings', price: 35, category: 'Sides', imageUrl: 'https://source.unsplash.com/800x600/?onion-rings' },
-          { name: 'Soft Drink', description: 'Refreshing Coca-Cola or Fanta', price: 35, category: 'Drinks', imageUrl: 'https://source.unsplash.com/800x600/?soda' },
+        name: 'Classic Burger',
+        description: 'Juicy beef patty with fresh lettuce, tomato, and house special sauce.',
+        price: 45,
+        imageUrl: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&auto=format&fit=crop&q=80',
+        category: 'Burger',
+        extras: [
+          { name: 'Extra cheese', price: 15 },
+          { name: 'Extra beef patty', price: 25 },
+          { name: 'Bacon slice', price: 10 },
         ],
       },
-      // Pizza Napoli
       {
-        restaurantId: restaurants[1]._id,
-        items: [
-          { name: 'Margherita Napoli', description: 'San Marzano tomatoes, fresh mozzarella, fresh basil and olive oil', price: 70, category: 'Pizza', imageUrl: 'https://source.unsplash.com/800x600/?margherita' },
-          { name: 'Pizza Regina', description: 'Tomato sauce, mozzarella, mushrooms and premium turkey ham', price: 90, category: 'Pizza', imageUrl: 'https://source.unsplash.com/800x600/?pizza-slice' },
-          { name: 'Four Cheese Pizza', description: 'Mozzarella, gorgonzola, parmesan and goat cheese', price: 120, category: 'Pizza', imageUrl: 'https://source.unsplash.com/800x600/?cheese-pizza' },
-          { name: 'Garlic Bread', description: 'Toasted baguette with garlic butter and fresh parsley', price: 35, category: 'Sides', imageUrl: 'https://source.unsplash.com/800x600/?garlic-bread' },
-          { name: 'Italian Tiramisu', description: 'Classic tiramisu with coffee and mascarpone', price: 45, category: 'Dessert', imageUrl: 'https://source.unsplash.com/800x600/?tiramisu' },
+        name: 'Chicken Burger',
+        description: 'Crispy chicken breast, creamy mayo, pickles, and melted cheese.',
+        price: 55,
+        imageUrl: 'https://images.unsplash.com/photo-1625813506062-0aeb1d7a094b?w=600&auto=format&fit=crop&q=80',
+        category: 'Burger',
+        extras: [
+          { name: 'Extra cheese', price: 15 },
+          { name: 'Extra chicken patty', price: 20 },
+          { name: 'Spicy sauce', price: 5 },
         ],
       },
-      // Fresh Salad Bar
       {
-        restaurantId: restaurants[2]._id,
-        items: [
-          { name: 'Greek Salad', description: 'Cucumbers, tomatoes, red onion, olives and feta cheese with dressing', price: 45, category: 'Salad', imageUrl: 'https://source.unsplash.com/800x600/?greek-salad' },
-          { name: 'Chicken Caesar Salad', description: 'Grilled chicken breast, romaine lettuce, parmesan cheese and croutons', price: 70, category: 'Salad', imageUrl: 'https://source.unsplash.com/800x600/?caesar-salad' },
-          { name: 'Quinoa Avocado Bowl', description: 'Quinoa, fresh avocado, cherry tomatoes and spinach', price: 90, category: 'Salad', imageUrl: 'https://source.unsplash.com/800x600/?quinoa-salad' },
-          { name: 'Detox Green Juice', description: 'Freshly squeezed cucumber, apple, spinach and ginger juice', price: 35, category: 'Drinks', imageUrl: 'https://source.unsplash.com/800x600/?green-juice' },
+        name: 'Double Cheese Burger',
+        description: 'Two flame-grilled beef patties with double cheddar cheese and caramelized onions.',
+        price: 70,
+        imageUrl: 'https://images.unsplash.com/photo-1586190848861-99aa4a171e90?w=600&auto=format&fit=crop&q=80',
+        category: 'Burger',
+        extras: [
+          { name: 'Extra cheese', price: 15 },
+          { name: 'Bacon slice', price: 10 },
         ],
       },
-      // Sweet Dessert
+      // Pizza
       {
-        restaurantId: restaurants[3]._id,
-        items: [
-          { name: 'Chocolate Lava Cake', description: 'Warm chocolate cake with a rich molten chocolate center', price: 45, category: 'Dessert', imageUrl: 'https://source.unsplash.com/800x600/?lava-cake' },
-          { name: 'Strawberry Cheesecake', description: 'Creamy New York style cheesecake with strawberry compote', price: 55, category: 'Dessert', imageUrl: 'https://source.unsplash.com/800x600/?cheesecake' },
-          { name: 'Macaron Box', description: 'Assortment of 6 delicious french macarons', price: 90, category: 'Dessert', imageUrl: 'https://source.unsplash.com/800x600/?macarons' },
-          { name: 'Hot Chocolate Fudge', description: 'Decadent chocolate brownie topped with hot fudge', price: 45, category: 'Dessert', imageUrl: 'https://source.unsplash.com/800x600/?brownie' },
+        name: 'Pizza Margarita',
+        description: 'Authentic Neapolitan pizza with tomato sauce, fresh mozzarella, and fresh basil.',
+        price: 50,
+        imageUrl: 'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=600&auto=format&fit=crop&q=80',
+        category: 'Pizza',
+        extras: [
+          { name: 'Extra cheese', price: 15 },
+          { name: 'Mushrooms', price: 10 },
+          { name: 'Olives', price: 5 },
+        ],
+      },
+      {
+        name: 'Pizza Chicken',
+        description: 'Tender grilled chicken, bell peppers, onions, and sweet BBQ drizzle.',
+        price: 65,
+        imageUrl: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=600&auto=format&fit=crop&q=80',
+        category: 'Pizza',
+        extras: [
+          { name: 'Extra cheese', price: 15 },
+          { name: 'Extra chicken', price: 20 },
+          { name: 'Jalapenos', price: 8 },
+        ],
+      },
+      {
+        name: 'Pizza 4 Fromages',
+        description: 'A rich combination of mozzarella, gorgonzola, parmesan, and goat cheese.',
+        price: 75,
+        imageUrl: 'https://images.unsplash.com/photo-1573821663912-569905455b1c?w=600&auto=format&fit=crop&q=80',
+        category: 'Pizza',
+        extras: [
+          { name: 'Honey drizzle', price: 8 },
+          { name: 'Extra cheese', price: 15 },
+        ],
+      },
+      // Crepe
+      {
+        name: 'Nutella Crepe',
+        description: 'Warm crepe loaded with premium Nutella chocolate spread.',
+        price: 35,
+        imageUrl: 'https://images.unsplash.com/photo-1519676867240-f03562e64548?w=600&auto=format&fit=crop&q=80',
+        category: 'Crepe',
+        extras: [
+          { name: 'Add banana slices', price: 8 },
+          { name: 'Add strawberry slices', price: 10 },
+          { name: 'Whipped cream', price: 6 },
+        ],
+      },
+      {
+        name: 'Chicken Crepe',
+        description: 'Savory crepe stuffed with grilled chicken, cheese, and creamy bechamel sauce.',
+        price: 45,
+        imageUrl: 'https://images.unsplash.com/photo-1621303837876-2970de1d7fce?w=600&auto=format&fit=crop&q=80',
+        category: 'Crepe',
+        extras: [
+          { name: 'Extra cheese', price: 15 },
+          { name: 'Mushrooms', price: 10 },
+        ],
+      },
+      {
+        name: 'Mixed Crepe',
+        description: 'The ultimate crepe combining sweet Nutella, fresh strawberries, and banana.',
+        price: 55,
+        imageUrl: 'https://images.unsplash.com/photo-1551024601-bec78aea704b?w=600&auto=format&fit=crop&q=80',
+        category: 'Crepe',
+        extras: [
+          { name: 'Vanilla ice cream', price: 12 },
+          { name: 'Crushed nuts', price: 8 },
+        ],
+      },
+      // Dessert
+      {
+        name: 'Chocolate Cake',
+        description: 'Rich and moist chocolate layer cake topped with chocolate fudge.',
+        price: 40,
+        imageUrl: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=600&auto=format&fit=crop&q=80',
+        category: 'Dessert',
+        extras: [
+          { name: 'Vanilla ice cream scoop', price: 12 },
+          { name: 'Whipped cream', price: 6 },
+        ],
+      },
+      {
+        name: 'Waffle Nutella',
+        description: 'Freshly baked warm Belgian waffle, drizzled with hot Nutella.',
+        price: 45,
+        imageUrl: 'https://images.unsplash.com/photo-1562376502-6f769499c886?w=600&auto=format&fit=crop&q=80',
+        category: 'Dessert',
+        extras: [
+          { name: 'Add banana', price: 8 },
+          { name: 'Add strawberry', price: 10 },
+          { name: 'Whipped cream', price: 6 },
+        ],
+      },
+      // Drinks
+      {
+        name: 'Coca Cola',
+        description: 'Classic chilled Coca-Cola.',
+        price: 10,
+        imageUrl: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=600&auto=format&fit=crop&q=80',
+        category: 'Drinks',
+        extras: [
+          { name: 'Ice cubes', price: 2 },
+          { name: 'Lemon slice', price: 2 },
+        ],
+      },
+      {
+        name: 'Orange Juice',
+        description: '100% freshly squeezed natural orange juice.',
+        price: 18,
+        imageUrl: 'https://images.unsplash.com/photo-1613478223719-2ab802602423?w=600&auto=format&fit=crop&q=80',
+        category: 'Drinks',
+        extras: [
+          { name: 'Ice cubes', price: 2 },
         ],
       },
     ];
 
-    for (const restaurant of menuData) {
-      await MenuItem.create(
-        restaurant.items.map((item) => ({
-          ...item,
-          restaurantId: restaurant.restaurantId,
-        }))
-      );
-    }
+    // Seed menu items
+    await MenuItem.create(menuItemsData);
 
-    console.log('✅ Menu items created');
+    console.log('✅ Menu items seeded successfully');
 
     await mongoose.connection.close();
     console.log('✅ Database seeding completed successfully');

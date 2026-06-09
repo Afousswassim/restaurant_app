@@ -2,10 +2,10 @@ const mongoose = require('mongoose');
 
 const menuItemSchema = new mongoose.Schema(
   {
-    restaurantId: {
+    branchId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Restaurant',
-      required: true,
+      ref: 'Branch',
+      required: false,
     },
     name: {
       type: String,
@@ -29,6 +29,18 @@ const menuItemSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    extras: [
+      {
+        name: {
+          type: String,
+          required: true,
+        },
+        price: {
+          type: Number,
+          required: true,
+        },
+      },
+    ],
     isAvailable: {
       type: Boolean,
       default: true,
@@ -39,12 +51,9 @@ const menuItemSchema = new mongoose.Schema(
       min: 0,
       max: 5,
     },
-    orderCount: {
-      type: Number,
-      default: 0,
-    },
   },
   { timestamps: true }
 );
 
-module.exports = mongoose.model('MenuItem', menuItemSchema);
+module.exports = mongoose.model('MenuItem', menuItemSchema, 'menu_items');
+
