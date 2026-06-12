@@ -231,4 +231,55 @@ class ApiService {
         .map((item) => Order.fromJson(item as Map<String, dynamic>))
         .toList();
   }
+
+  // Admin login API call
+  static Future<Map<String, dynamic>> adminLogin(String email, String password) async {
+    try {
+      final uri = Uri.parse('$baseUrl/admin/login');
+      final response = await http.post(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: jsonEncode({
+          'email': email,
+          'password': password,
+        }),
+      ).timeout(timeoutDuration);
+
+      final jsonResponse = jsonDecode(response.body);
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        if (jsonResponse['success'] == true) {
+          return jsonResponse as Map<String, dynamic>;
+        } else {
+          throw Exception(jsonResponse['message'] ?? 'Login failed');
+        }
+      } else {
+        throw Exception(jsonResponse['message'] ?? 'Login failed with status ${response.statusCode}');
+      }
+    } on Exception {
+      rethrow;
+    } catch (e) {
+      throw Exception('Error: $e');
+    }
+  }
+
+  // Fetch all orders for the admin panel
+  static Future<List<Order>> getOrders() async {
+    final data = await _makeRequest('GET', '/orders');
+    return (data as List)
+        .map((item) => Order.fromJson(item as Map<String, dynamic>))
+        .toList();
+  }
+
+  // Update status of a single order
+  static Future<Order> updateOrderStatus(String orderId, String status) async {
+    final data = await _makeRequest(
+      'PUT',
+      '/orders/$orderId/status',
+      body: {'status': status},
+    );
+    return Order.fromJson(data as Map<String, dynamic>);
+  }
 }

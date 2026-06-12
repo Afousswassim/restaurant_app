@@ -5,6 +5,7 @@ import '../providers/menu_provider.dart';
 import '../utils/helpers.dart';
 import '../widgets/branch_card.dart';
 import 'home_screen.dart';
+import 'admin_login_screen.dart';
 
 class BranchSelectionScreen extends StatefulWidget {
   const BranchSelectionScreen({Key? key}) : super(key: key);
@@ -37,6 +38,15 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen> {
         backgroundColor: Colors.deepOrange,
         foregroundColor: Colors.white,
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.admin_panel_settings_outlined),
+            tooltip: 'Admin Portal',
+            onPressed: () {
+              Navigator.of(context).pushNamed(AdminLoginScreen.routeName);
+            },
+          ),
+        ],
       ),
       body: Center(
         child: Container(

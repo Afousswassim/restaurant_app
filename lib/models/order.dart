@@ -123,6 +123,8 @@ class Order {
         return 'Order Confirmed';
       case 'preparing':
         return 'Preparing';
+      case 'delivering':
+        return 'Delivering';
       case 'on-way':
         return 'On The Way';
       case 'delivered':

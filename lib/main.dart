@@ -4,8 +4,11 @@ import 'providers/branch_provider.dart';
 import 'providers/menu_provider.dart';
 import 'providers/cart_provider.dart';
 import 'providers/order_provider.dart';
+import 'providers/admin_provider.dart';
 import 'screens/splash_screen.dart';
 import 'screens/cart_screen.dart';
+import 'screens/admin_login_screen.dart';
+import 'screens/admin_dashboard_screen.dart';
 import 'utils/helpers.dart';
 
 void main() async {
@@ -29,6 +32,7 @@ class MyApp extends StatelessWidget {
               cartProvider!..updateBranch(branchProvider.selectedBranch),
         ),
         ChangeNotifierProvider(create: (_) => OrderProvider()),
+        ChangeNotifierProvider(create: (_) => AdminProvider()),
       ],
       child: MaterialApp(
         title: 'Wassim Food',
@@ -44,6 +48,8 @@ class MyApp extends StatelessWidget {
         home: const SplashScreen(),
         routes: {
           CartScreen.routeName: (ctx) => const CartScreen(),
+          AdminLoginScreen.routeName: (ctx) => const AdminLoginScreen(),
+          AdminDashboardScreen.routeName: (ctx) => const AdminDashboardScreen(),
         },
       ),
     );

@@ -130,6 +130,9 @@ exports.updateOrderStatus = async (req, res) => {
       });
     }
 
+    // Hook for client notifications on status change (to be implemented later)
+    // Example: notifyClientOfStatusChange(order);
+
     res.status(200).json({
       success: true,
       data: order,
