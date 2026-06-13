@@ -1,24 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../models/menu_item.dart';
 import '../providers/branch_provider.dart';
 import '../providers/menu_provider.dart';
 import '../providers/cart_provider.dart';
 import '../utils/helpers.dart';
 import '../widgets/category_chip.dart';
 import '../widgets/menu_item_card.dart';
+import '../widgets/faq_section.dart';
+import '../widgets/app_footer.dart';
+import '../widgets/bottom_nav_bar.dart';
 import 'branch_selection_screen.dart';
 import 'food_details_screen.dart';
 import 'cart_screen.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({Key? key}) : super(key: key);
+  final bool scrollToMenu;
+  const HomeScreen({Key? key, this.scrollToMenu = false}) : super(key: key);
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  final ScrollController _scrollController = ScrollController();
+  int _currentBottomNavIndex = 0;
+
   final List<Map<String, String>> _categories = [
     {'name': 'Burger', 'icon': '🍔'},
     {'name': 'Pizza', 'icon': '🍕'},
@@ -28,8 +34,32 @@ class _HomeScreenState extends State<HomeScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    if (widget.scrollToMenu) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_scrollController.hasClients) {
+          _scrollController.animateTo(
+            200,
+            duration: const Duration(milliseconds: 600),
+            curve: Curves.easeInOut,
+          );
+        }
+        setState(() {
+          _currentBottomNavIndex = 1;
+        });
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final size = MediaQuery.of(context).size;
     final isMobile = ResponsiveUtil.isMobile(size.width);
 
@@ -96,6 +126,7 @@ class _HomeScreenState extends State<HomeScreen> {
             maxWidth: isMobile ? double.infinity : 900,
           ),
           child: CustomScrollView(
+            controller: _scrollController,
             physics: const BouncingScrollPhysics(),
             slivers: [
               // Hero Brand Banner
@@ -299,7 +330,13 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
 
               const SliverToBoxAdapter(
-                child: SizedBox(height: 100),
+                child: FaqSection(),
+              ),
+              const SliverToBoxAdapter(
+                child: AppFooter(),
+              ),
+              const SliverToBoxAdapter(
+                child: SizedBox(height: 120),
               ),
             ],
           ),
@@ -347,6 +384,33 @@ class _HomeScreenState extends State<HomeScreen> {
         },
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      bottomNavigationBar: BottomNavBar(
+        currentIndex: _currentBottomNavIndex,
+        onHomeTap: () {
+          if (_scrollController.hasClients) {
+            _scrollController.animateTo(
+              0,
+              duration: const Duration(milliseconds: 600),
+              curve: Curves.easeInOut,
+            );
+          }
+          setState(() {
+            _currentBottomNavIndex = 0;
+          });
+        },
+        onMenuTap: () {
+          if (_scrollController.hasClients) {
+            _scrollController.animateTo(
+              200,
+              duration: const Duration(milliseconds: 600),
+              curve: Curves.easeInOut,
+            );
+          }
+          setState(() {
+            _currentBottomNavIndex = 1;
+          });
+        },
+      ),
     );
   }
 }

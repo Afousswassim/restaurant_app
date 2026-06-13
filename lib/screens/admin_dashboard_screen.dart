@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/admin_provider.dart';
 import '../models/order.dart';
 import '../utils/helpers.dart';
+import '../widgets/bottom_nav_bar.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   static const routeName = '/admin-dashboard';
@@ -234,6 +235,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 ),
               ),
             ),
+      bottomNavigationBar: const BottomNavBar(currentIndex: 4),
     );
   }
 
