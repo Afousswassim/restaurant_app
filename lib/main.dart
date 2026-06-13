@@ -5,10 +5,15 @@ import 'providers/menu_provider.dart';
 import 'providers/cart_provider.dart';
 import 'providers/order_provider.dart';
 import 'providers/admin_provider.dart';
+import 'providers/client_provider.dart';
 import 'screens/splash_screen.dart';
 import 'screens/cart_screen.dart';
 import 'screens/admin_login_screen.dart';
 import 'screens/admin_dashboard_screen.dart';
+import 'screens/client_login_screen.dart';
+import 'screens/client_register_screen.dart';
+import 'screens/client_profile_screen.dart';
+import 'screens/orders_screen.dart';
 import 'utils/helpers.dart';
 
 void main() async {
@@ -33,6 +38,7 @@ class MyApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(create: (_) => OrderProvider()),
         ChangeNotifierProvider(create: (_) => AdminProvider()),
+        ChangeNotifierProvider(create: (_) => ClientProvider()),
       ],
       child: MaterialApp(
         title: 'Wassim Food',
@@ -50,6 +56,10 @@ class MyApp extends StatelessWidget {
           CartScreen.routeName: (ctx) => const CartScreen(),
           AdminLoginScreen.routeName: (ctx) => const AdminLoginScreen(),
           AdminDashboardScreen.routeName: (ctx) => const AdminDashboardScreen(),
+          ClientLoginScreen.routeName: (ctx) => const ClientLoginScreen(),
+          ClientRegisterScreen.routeName: (ctx) => const ClientRegisterScreen(),
+          ClientProfileScreen.routeName: (ctx) => const ClientProfileScreen(),
+          OrdersScreen.routeName: (ctx) => const OrdersScreen(),
         },
       ),
     );

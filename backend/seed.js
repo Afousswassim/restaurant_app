@@ -24,22 +24,25 @@ const seedDatabase = async () => {
 
     console.log('✅ Old branches, menu_items, cart_items, orders cleared');
 
-    // Insert 3 Casablanca branches
+    // Insert 3 Casablanca branches with slugs
     const branches = await Branch.create([
       {
         name: 'Maarif Branch',
+        slug: 'maarif',
         address: 'Maarif, Casablanca',
         deliveryFee: 15,
         deliveryTime: '20-30 min',
       },
       {
         name: 'Ain Sebaa Branch',
+        slug: 'ain-sebaa',
         address: 'Ain Sebaa, Casablanca',
         deliveryFee: 20,
         deliveryTime: '25-35 min',
       },
       {
         name: 'Sidi Maarouf Branch',
+        slug: 'sidi-maarouf',
         address: 'Sidi Maarouf, Casablanca',
         deliveryFee: 25,
         deliveryTime: '30-40 min',
@@ -205,8 +208,22 @@ const seedDatabase = async () => {
       },
     ];
 
-    // Seed menu items
-    await MenuItem.create(menuItemsData);
+    // Seed menu items and assign to branches
+    const itemsToCreate = [];
+    // simple assignment: first 6 items -> maarif, next 6 -> ain-sebaa, rest -> sidi-maarouf
+    const maarifId = branches[0]._id;
+    const ainSebaaId = branches[1]._id;
+    const sidiMaaroufId = branches[2]._id;
+
+    menuItemsData.forEach((it, idx) => {
+      const copy = Object.assign({}, it);
+      if (idx < 6) copy.branchId = maarifId;
+      else if (idx < 12) copy.branchId = ainSebaaId;
+      else copy.branchId = sidiMaaroufId;
+      itemsToCreate.push(copy);
+    });
+
+    await MenuItem.create(itemsToCreate);
 
     console.log('✅ Menu items seeded successfully');
 

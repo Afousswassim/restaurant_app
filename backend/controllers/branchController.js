@@ -14,3 +14,16 @@ exports.getBranches = async (req, res) => {
     });
   }
 };
+
+exports.getBranchBySlug = async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const branch = await Branch.findOne({ slug });
+    if (!branch) {
+      return res.status(404).json({ success: false, message: 'Branch not found' });
+    }
+    res.status(200).json({ success: true, data: branch });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};

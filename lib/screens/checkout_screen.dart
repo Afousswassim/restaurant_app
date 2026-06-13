@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../providers/cart_provider.dart';
 import '../providers/order_provider.dart';
+import '../providers/client_provider.dart';
 import '../utils/helpers.dart';
 import 'order_success_screen.dart';
 
@@ -22,6 +24,21 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   final _notesController = TextEditingController();
   String _paymentMethod = 'cash';
   bool _isProcessing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final clientProvider = context.read<ClientProvider>();
+    if (clientProvider.isAuthenticated && clientProvider.currentClient != null) {
+      final client = clientProvider.currentClient!;
+      _nameController.text = client.fullName;
+      _phoneController.text = client.phone;
+      _addressController.text = client.address;
+      if (client.landmark.isNotEmpty) {
+        _notesController.text = "Landmark: ${client.landmark}";
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -46,6 +63,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       return;
     }
 
+    final clientProvider = context.read<ClientProvider>();
+    final clientId = clientProvider.currentClient?.id;
+
     setState(() => _isProcessing = true);
 
     try {
@@ -56,11 +76,17 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         branch: selectedBranch,
         paymentMethod: _paymentMethod,
         notes: _notesController.text.trim(),
+        clientId: clientId,
       );
 
       if (!mounted) return;
 
       if (orderProvider.currentOrder != null) {
+        final prefs = await SharedPreferences.getInstance();
+        final localOrders = prefs.getStringList('local_orders') ?? [];
+        localOrders.add(orderProvider.currentOrder!.id);
+        await prefs.setStringList('local_orders', localOrders);
+
         await cartProvider.clearCart();
 
         if (!mounted) return;

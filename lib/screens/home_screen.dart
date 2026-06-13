@@ -9,6 +9,7 @@ import '../widgets/menu_item_card.dart';
 import '../widgets/faq_section.dart';
 import '../widgets/app_footer.dart';
 import '../widgets/bottom_nav_bar.dart';
+import '../widgets/top_actions.dart';
 import 'branch_selection_screen.dart';
 import 'food_details_screen.dart';
 import 'cart_screen.dart';
@@ -38,6 +39,15 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     if (widget.scrollToMenu) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
+        final branchProvider = context.read<BranchProvider>();
+        final menuProvider = context.read<MenuProvider>();
+        final selectedBranch = branchProvider.selectedBranch;
+
+        // Load menu for the selected branch if not already loaded
+        if (selectedBranch != null && menuProvider.rawMenuItems.isEmpty) {
+          menuProvider.loadMenu(selectedBranch.id);
+        }
+
         if (_scrollController.hasClients) {
           _scrollController.animateTo(
             200,
@@ -116,6 +126,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           const SizedBox(width: 8),
+          const TopActions(),
         ],
         backgroundColor: Colors.deepOrange,
         elevation: 0,

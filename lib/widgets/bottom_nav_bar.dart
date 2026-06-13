@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/cart_provider.dart';
-import '../providers/admin_provider.dart';
+import '../providers/client_provider.dart';
 import '../screens/home_screen.dart';
 import '../screens/cart_screen.dart';
-import '../screens/admin_login_screen.dart';
-import '../screens/admin_dashboard_screen.dart';
+import '../screens/client_login_screen.dart';
+import '../screens/client_profile_screen.dart';
+import '../screens/orders_screen.dart';
 import '../utils/helpers.dart';
 
 class BottomNavBar extends StatelessWidget {
@@ -92,13 +93,20 @@ class BottomNavBar extends StatelessWidget {
                       isSelected: currentIndex == 3,
                       primaryColor: primaryColor,
                     ),
-                    _buildNavItem(
-                      context: context,
-                      index: 4,
-                      icon: Icons.person,
-                      label: 'Login',
-                      isSelected: currentIndex == 4,
-                      primaryColor: primaryColor,
+                    Consumer<ClientProvider>(
+                      builder: (context, clientProvider, _) {
+                        final label = clientProvider.isAuthenticated
+                            ? (clientProvider.currentClient?.fullName.split(' ').first ?? 'Profile')
+                            : 'Login';
+                        return _buildNavItem(
+                          context: context,
+                          index: 4,
+                          icon: Icons.person,
+                          label: label,
+                          isSelected: currentIndex == 4,
+                          primaryColor: primaryColor,
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -213,60 +221,24 @@ class BottomNavBar extends StatelessWidget {
         );
         break;
       case 3:
-        _showOrdersDialog(context);
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const OrdersScreen()),
+        );
         break;
       case 4:
-        final adminProvider = context.read<AdminProvider>();
-        if (adminProvider.isAuthenticated) {
+        final clientProvider = context.read<ClientProvider>();
+        if (clientProvider.isAuthenticated) {
           Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const AdminDashboardScreen()),
+            MaterialPageRoute(builder: (_) => const ClientProfileScreen()),
           );
         } else {
           Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const AdminLoginScreen()),
+            MaterialPageRoute(builder: (_) => const ClientLoginScreen()),
           );
         }
         break;
     }
   }
 
-  void _showOrdersDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Order Status Tracking'),
-        content: const Text(
-          'You can track your order status after checking out. '
-          'If you are an administrator and wish to manage customer orders, please log in via the Admin Portal.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              final adminProvider = context.read<AdminProvider>();
-              if (adminProvider.isAuthenticated) {
-                Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(builder: (_) => const AdminDashboardScreen()),
-                );
-              } else {
-                Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(builder: (_) => const AdminLoginScreen()),
-                );
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.deepOrange,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Admin Portal'),
-          ),
-        ],
-      ),
-    );
-  }
+
 }

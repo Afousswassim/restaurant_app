@@ -60,6 +60,7 @@ class Order {
   final String status;
   final String paymentMethod;
   final String notes;
+  final String? clientId;
   final DateTime createdAt;
 
   Order({
@@ -76,6 +77,7 @@ class Order {
     required this.paymentMethod,
     required this.notes,
     required this.createdAt,
+    this.clientId,
   });
 
   factory Order.fromJson(Map<String, dynamic> json) {
@@ -98,6 +100,7 @@ class Order {
       paymentMethod: json['paymentMethod'] ?? 'cash',
       notes: json['notes'] ?? '',
       createdAt: DateTime.tryParse(json['createdAt'] ?? '') ?? DateTime.now(),
+      clientId: json['clientId'],
     );
   }
 
@@ -115,6 +118,7 @@ class Order {
     'paymentMethod': paymentMethod,
     'notes': notes,
     'createdAt': createdAt.toIso8601String(),
+    'clientId': clientId,
   };
 
   String get statusDisplay {

@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:provider/provider.dart';
 import '../providers/cart_provider.dart';
+import '../providers/branch_provider.dart';
+import '../providers/menu_provider.dart';
 import 'branch_selection_screen.dart';
+import 'home_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({Key? key}) : super(key: key);
@@ -40,6 +44,35 @@ class _SplashScreenState extends State<SplashScreen>
     try {
       await context.read<CartProvider>().loadCart();
 
+      // Extract branchId from deep link URL
+      final branchId = _extractBranchIdFromUrl();
+
+      if (branchId != null && branchId.isNotEmpty) {
+        // Deep link detected: navigate directly to menu
+        final branchProvider = context.read<BranchProvider>();
+        final menuProvider = context.read<MenuProvider>();
+
+        // Find and select branch by ID (this also loads branches if needed)
+        await branchProvider.selectBranchById(branchId);
+        final selectedBranch = branchProvider.selectedBranch;
+
+        if (selectedBranch != null) {
+          // Load menu for this branch
+          await menuProvider.loadMenu(selectedBranch.id);
+
+          if (!mounted) return;
+
+          // Navigate directly to menu, skip BranchSelectionScreen
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (_) => const HomeScreen(scrollToMenu: true),
+            ),
+          );
+          return;
+        }
+      }
+
+      // No deep link: show normal branch selection
       if (!mounted) return;
 
       Navigator.of(context).pushReplacement(
@@ -47,11 +80,37 @@ class _SplashScreenState extends State<SplashScreen>
       );
     } catch (e) {
       if (!mounted) return;
-      // Navigate to branch selection even if cart fails to load (offline/dev)
+      // Navigate to branch selection on error
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => const BranchSelectionScreen()),
       );
     }
+  }
+
+  /// Extract branchId from URL fragments and query parameters.
+  /// Handles both hash routing (#/menu?branchId=ID) and query routing (?branchId=ID)
+  String? _extractBranchIdFromUrl() {
+    final base = Uri.base;
+
+    // Try query parameters first (direct URL access)
+    if (base.queryParameters.containsKey('branchId')) {
+      return base.queryParameters['branchId'];
+    }
+
+    // Try hash fragment (Flutter Web hash routing)
+    if (base.fragment.isNotEmpty) {
+      final fragment = base.fragment;
+
+      // Fragment format: /menu?branchId=ID or #/menu?branchId=ID
+      final queryIndex = fragment.indexOf('?');
+      if (queryIndex != -1) {
+        final queryPart = fragment.substring(queryIndex + 1);
+        final params = Uri.splitQueryString(queryPart);
+        return params['branchId'];
+      }
+    }
+
+    return null;
   }
 
   @override

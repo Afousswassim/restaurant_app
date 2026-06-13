@@ -3,7 +3,7 @@ const CartItem = require('../models/CartItem');
 
 exports.createOrder = async (req, res) => {
   try {
-    const { sessionId, customerName, phone, address, branch, paymentMethod, notes } = req.body;
+    const { sessionId, customerName, phone, address, branch, paymentMethod, notes, clientId } = req.body;
 
     if (!sessionId || !customerName || !phone || !address || !branch) {
       return res.status(400).json({
@@ -40,6 +40,7 @@ exports.createOrder = async (req, res) => {
     const totalAmount = subtotal + deliveryFee;
 
     const order = await Order.create({
+      clientId: clientId || null,
       customerName,
       phone,
       address,
@@ -97,7 +98,11 @@ exports.getOrder = async (req, res) => {
 
 exports.getAllOrders = async (req, res) => {
   try {
-    const orders = await Order.find().sort({ createdAt: -1 }).limit(50);
+    const filter = {};
+    if (req.query.clientId) {
+      filter.clientId = req.query.clientId;
+    }
+    const orders = await Order.find(filter).sort({ createdAt: -1 }).limit(50);
     res.status(200).json({
       success: true,
       data: orders,

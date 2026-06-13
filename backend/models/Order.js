@@ -73,6 +73,11 @@ const orderSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    clientId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Client',
+      default: null,
+    },
   },
   { timestamps: true }
 );

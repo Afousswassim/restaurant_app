@@ -4,15 +4,21 @@ import '../models/branch.dart';
 import '../models/menu_item.dart';
 import '../models/cart_item.dart';
 import '../models/order.dart';
+import '../config/app_config.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://localhost:5000';
+  // Use AppConfig.apiBaseUrl so backend URL can be changed in one place.
+  // Important: when scanning QR codes from a phone, `localhost` on the QR
+  // will point to the phone itself and fail. Use your PC LAN IP in
+  // `AppConfig.apiBaseUrl` while testing from mobile.
+  static final String baseUrl = AppConfig.apiBaseUrl;
   static const Duration timeoutDuration = Duration(seconds: 30);
 
   static Future<dynamic> _makeRequest(
     String method,
     String endpoint, {
     dynamic body,
+    String? token,
   }) async {
     try {
       final uri = Uri.parse('$baseUrl$endpoint');
@@ -22,6 +28,9 @@ class ApiService {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
       };
+      if (token != null) {
+        headers['Authorization'] = 'Bearer $token';
+      }
 
       switch (method.toUpperCase()) {
         case 'GET':
@@ -203,6 +212,7 @@ class ApiService {
     required Branch branch,
     String? paymentMethod,
     String? notes,
+    String? clientId,
   }) async {
     final data = await _makeRequest(
       'POST',
@@ -215,9 +225,82 @@ class ApiService {
         'branch': branch.toJson(),
         'paymentMethod': paymentMethod ?? 'cash',
         'notes': notes ?? '',
+        if (clientId != null) 'clientId': clientId,
       },
     );
     return Order.fromJson(data as Map<String, dynamic>);
+  }
+
+  // Client endpoints
+  static Future<Map<String, dynamic>> registerClient({
+    required String fullName,
+    required String phone,
+    required String email,
+    required String password,
+  }) async {
+    final data = await _makeRequest(
+      'POST',
+      '/clients/register',
+      body: {
+        'fullName': fullName,
+        'phone': phone,
+        'email': email,
+        'password': password,
+      },
+    );
+    return data as Map<String, dynamic>;
+  }
+
+  static Future<Map<String, dynamic>> loginClient({
+    required String email,
+    required String password,
+  }) async {
+    final data = await _makeRequest(
+      'POST',
+      '/clients/login',
+      body: {
+        'email': email,
+        'password': password,
+      },
+    );
+    return data as Map<String, dynamic>;
+  }
+
+  static Future<Map<String, dynamic>> getClientProfile(String token) async {
+    final data = await _makeRequest(
+      'GET',
+      '/clients/profile',
+      token: token,
+    );
+    return data as Map<String, dynamic>;
+  }
+
+  static Future<Map<String, dynamic>> updateClientProfile({
+    required String token,
+    String? fullName,
+    String? phone,
+    String? address,
+    String? landmark,
+  }) async {
+    final data = await _makeRequest(
+      'PUT',
+      '/clients/profile',
+      token: token,
+      body: {
+        if (fullName != null) 'fullName': fullName,
+        if (phone != null) 'phone': phone,
+        if (address != null) 'address': address,
+        if (landmark != null) 'landmark': landmark,
+      },
+    );
+    return data as Map<String, dynamic>;
+  }
+
+  static Future<List<Order>> getClientOrders(String clientId) async {
+    final data = await _makeRequest('GET', '/orders?clientId=$clientId');
+    return (data as List)
+        .map((item) => Order.fromJson(item as Map<String, dynamic>))
+        .toList();
   }
 
   static Future<Order> getOrder(String orderId) async {

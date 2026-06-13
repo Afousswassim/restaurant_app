@@ -22,6 +22,7 @@ class OrderProvider with ChangeNotifier {
     required Branch branch,
     String? paymentMethod,
     String? notes,
+    String? clientId,
   }) async {
     _isLoading = true;
     _error = null;
@@ -37,6 +38,7 @@ class OrderProvider with ChangeNotifier {
         branch: branch,
         paymentMethod: paymentMethod,
         notes: notes,
+        clientId: clientId,
       );
       _currentOrder = order;
       _error = null;
