@@ -6,6 +6,7 @@ import '../models/order.dart';
 import '../services/api_service.dart';
 import '../utils/helpers.dart';
 import '../widgets/top_actions.dart';
+import '../widgets/app_drawer.dart';
 import '../widgets/bottom_nav_bar.dart';
 
 class OrdersScreen extends StatefulWidget {
@@ -74,18 +75,26 @@ class _OrdersScreenState extends State<OrdersScreen> {
     final size = MediaQuery.of(context).size;
     final isMobile = ResponsiveUtil.isMobile(size.width);
 
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: theme.scaffoldBackgroundColor,
+      endDrawer: const AppDrawer(),
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'Track Orders',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.deepOrange),
+          style: textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: colorScheme.primary,
+          ),
         ),
         centerTitle: true,
-        backgroundColor: Colors.white,
+        backgroundColor: theme.scaffoldBackgroundColor,
         elevation: 0,
         shape: Border(
-          bottom: BorderSide(color: Colors.grey.shade100),
+          bottom: BorderSide(color: theme.dividerColor),
         ),
         actions: const [
           TopActions(),
@@ -97,9 +106,9 @@ class _OrdersScreenState extends State<OrdersScreen> {
             maxWidth: isMobile ? double.infinity : 600,
           ),
           child: _isLoading
-              ? const Center(
+              ? Center(
                   child: CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.deepOrange),
+                    valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
                   ),
                 )
               : _error != null
@@ -109,21 +118,24 @@ class _OrdersScreenState extends State<OrdersScreen> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                            Icon(Icons.error_outline, size: 48, color: colorScheme.error),
                             const SizedBox(height: 16),
                             Text(
                               _error!,
                               textAlign: TextAlign.center,
-                              style: const TextStyle(fontSize: 16),
+                              style: textTheme.bodyLarge?.copyWith(color: colorScheme.onSurface),
                             ),
                             const SizedBox(height: 16),
                             ElevatedButton(
                               onPressed: _loadOrders,
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.deepOrange,
-                                foregroundColor: Colors.white,
+                                backgroundColor: colorScheme.primary,
+                                foregroundColor: colorScheme.onPrimary,
                               ),
-                              child: const Text('Retry'),
+                              child: Text(
+                                'Retry',
+                                style: textTheme.bodyLarge?.copyWith(color: colorScheme.onPrimary),
+                              ),
                             ),
                           ],
                         ),
@@ -131,25 +143,24 @@ class _OrdersScreenState extends State<OrdersScreen> {
                     )
                   : RefreshIndicator(
                       onRefresh: _loadOrders,
-                      color: Colors.deepOrange,
+                      color: colorScheme.primary,
                       child: _displayOrders.isEmpty
                           ? ListView(
                               physics: const AlwaysScrollableScrollPhysics(),
                               children: [
                                 SizedBox(height: size.height * 0.2),
-                                const Icon(
+                                Icon(
                                   Icons.receipt_long_outlined,
                                   size: 72,
-                                  color: Colors.grey,
+                                  color: colorScheme.onSurfaceVariant,
                                 ),
                                 const SizedBox(height: 16),
-                                const Center(
+                                Center(
                                   child: Text(
                                     'No orders placed yet.',
-                                    style: TextStyle(
-                                      fontSize: 16,
+                                    style: textTheme.titleMedium?.copyWith(
                                       fontWeight: FontWeight.bold,
-                                      color: Colors.black54,
+                                      color: colorScheme.onSurfaceVariant,
                                     ),
                                   ),
                                 ),
@@ -172,23 +183,26 @@ class _OrdersScreenState extends State<OrdersScreen> {
   }
 
   Widget _buildOrderCard(Order order) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
     Color statusColor;
     switch (order.status) {
       case 'pending':
-        statusColor = Colors.orange;
+        statusColor = colorScheme.secondary;
         break;
       case 'preparing':
-        statusColor = Colors.amber.shade700;
+        statusColor = colorScheme.primary;
         break;
       case 'delivering':
       case 'on-way':
-        statusColor = Colors.blue;
+        statusColor = colorScheme.tertiary;
         break;
       case 'delivered':
-        statusColor = Colors.green;
+        statusColor = colorScheme.secondaryContainer;
         break;
       default:
-        statusColor = Colors.grey;
+        statusColor = colorScheme.onSurfaceVariant;
     }
 
     final idTruncated = order.id.length > 6 ? order.id.substring(order.id.length - 6).toUpperCase() : order.id.toUpperCase();
@@ -196,10 +210,10 @@ class _OrdersScreenState extends State<OrdersScreen> {
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       elevation: 1,
-      color: Colors.white,
+      color: theme.cardColor,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: Colors.grey.shade100),
+        side: BorderSide(color: theme.dividerColor),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -211,16 +225,17 @@ class _OrdersScreenState extends State<OrdersScreen> {
               children: [
                 Text(
                   'ORDER ID: #$idTruncated',
-                  style: const TextStyle(
+                  style: textTheme.bodyLarge?.copyWith(
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
                     letterSpacing: 0.5,
+                    color: colorScheme.onSurface,
                   ),
                 ),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: statusColor.withOpacity(0.08),
+                    color: statusColor.withOpacity(0.12),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Row(
@@ -236,7 +251,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                       const SizedBox(width: 6),
                       Text(
                         order.statusDisplay,
-                        style: TextStyle(
+                        style: textTheme.bodySmall?.copyWith(
                           color: statusColor,
                           fontWeight: FontWeight.bold,
                           fontSize: 12,
@@ -247,16 +262,16 @@ class _OrdersScreenState extends State<OrdersScreen> {
                 ),
               ],
             ),
-            const Divider(height: 24),
+            Divider(height: 24, color: theme.dividerColor),
             Row(
               children: [
-                const Icon(Icons.storefront, size: 14, color: Colors.deepOrange),
+                Icon(Icons.storefront, size: 14, color: colorScheme.primary),
                 const SizedBox(width: 6),
                 Text(
                   order.branch.name,
-                  style: const TextStyle(
+                  style: textTheme.bodySmall?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: Colors.deepOrange,
+                    color: colorScheme.primary,
                     fontSize: 13,
                   ),
                 ),
@@ -265,48 +280,59 @@ class _OrdersScreenState extends State<OrdersScreen> {
             const SizedBox(height: 8),
             Text(
               'Address: ${order.address}',
-              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+              style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
             ),
-            const Divider(height: 24),
+            Divider(height: 24, color: theme.dividerColor),
             ...order.items.map((item) => Padding(
                   padding: const EdgeInsets.symmetric(vertical: 2),
                   child: Row(
                     children: [
                       Text(
                         '${item.quantity}x ',
-                        style: const TextStyle(
+                        style: textTheme.bodySmall?.copyWith(
                           fontWeight: FontWeight.bold,
-                          color: Colors.deepOrange,
+                          color: colorScheme.primary,
                           fontSize: 12,
                         ),
                       ),
                       Expanded(
                         child: Text(
                           item.name,
-                          style: const TextStyle(fontSize: 12),
+                          style: textTheme.bodySmall?.copyWith(
+                            fontSize: 12,
+                            color: colorScheme.onSurface,
+                          ),
                         ),
                       ),
                       Text(
                         CurrencyFormatter.formatDH(item.totalPrice),
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                        style: textTheme.bodySmall?.copyWith(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: colorScheme.onSurface,
+                        ),
                       ),
                     ],
                   ),
                 )),
-            const Divider(height: 24),
+            Divider(height: 24, color: theme.dividerColor),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
+                Text(
                   'Total Amount:',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                  style: textTheme.bodyLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                    color: colorScheme.onSurface,
+                  ),
                 ),
                 Text(
                   CurrencyFormatter.formatDH(order.totalAmount),
-                  style: const TextStyle(
+                  style: textTheme.bodyLarge?.copyWith(
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
-                    color: Colors.deepOrange,
+                    color: colorScheme.primary,
                   ),
                 ),
               ],

@@ -6,24 +6,40 @@ import 'providers/cart_provider.dart';
 import 'providers/order_provider.dart';
 import 'providers/admin_provider.dart';
 import 'providers/client_provider.dart';
+import 'providers/notification_provider.dart';
+import 'providers/theme_provider.dart';
+import 'providers/offers_provider.dart';
 import 'screens/splash_screen.dart';
+import 'screens/home_screen.dart';
+import 'screens/branch_selection_screen.dart';
+import 'screens/offers_screen.dart';
+import 'screens/favorites_screen.dart';
+import 'screens/settings_screen.dart';
 import 'screens/cart_screen.dart';
 import 'screens/admin_login_screen.dart';
 import 'screens/admin_dashboard_screen.dart';
 import 'screens/client_login_screen.dart';
 import 'screens/client_register_screen.dart';
 import 'screens/client_profile_screen.dart';
+import 'screens/notification_screen.dart';
 import 'screens/orders_screen.dart';
+import 'screens/menu_screen.dart';
 import 'utils/helpers.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await SessionManager.ensureSession();
-  runApp(const MyApp());
+
+  // Initialize theme provider before running app so theme is applied immediately
+  final themeProvider = ThemeProvider();
+  await themeProvider.loadTheme();
+
+  runApp(MyApp(themeProvider: themeProvider));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+  final ThemeProvider themeProvider;
+  const MyApp({Key? key, required this.themeProvider}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -39,27 +55,55 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => OrderProvider()),
         ChangeNotifierProvider(create: (_) => AdminProvider()),
         ChangeNotifierProvider(create: (_) => ClientProvider()),
+        ChangeNotifierProvider(create: (_) => NotificationProvider()),
+        ChangeNotifierProvider(create: (_) => OffersProvider()),
+        ChangeNotifierProvider.value(value: themeProvider),
       ],
-      child: MaterialApp(
-        title: 'Wassim Food',
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          useMaterial3: true,
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: Colors.deepOrange,
-            brightness: Brightness.light,
-          ),
-          fontFamily: 'Roboto',
-        ),
-        home: const SplashScreen(),
-        routes: {
-          CartScreen.routeName: (ctx) => const CartScreen(),
-          AdminLoginScreen.routeName: (ctx) => const AdminLoginScreen(),
-          AdminDashboardScreen.routeName: (ctx) => const AdminDashboardScreen(),
-          ClientLoginScreen.routeName: (ctx) => const ClientLoginScreen(),
-          ClientRegisterScreen.routeName: (ctx) => const ClientRegisterScreen(),
-          ClientProfileScreen.routeName: (ctx) => const ClientProfileScreen(),
-          OrdersScreen.routeName: (ctx) => const OrdersScreen(),
+      child: Consumer<ThemeProvider>(
+        builder: (context, themeProv, _) {
+          final lightTheme = ThemeData(
+            useMaterial3: true,
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: Colors.deepOrange,
+              brightness: Brightness.light,
+            ),
+            fontFamily: 'Roboto',
+          );
+
+          final darkTheme = ThemeData(
+            useMaterial3: true,
+            brightness: Brightness.dark,
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: Colors.deepOrange,
+              brightness: Brightness.dark,
+            ),
+            fontFamily: 'Roboto',
+          );
+
+          return MaterialApp(
+            title: 'Wassim Food',
+            debugShowCheckedModeBanner: false,
+            theme: lightTheme,
+            darkTheme: darkTheme,
+            themeMode: themeProv.isDarkMode ? ThemeMode.dark : ThemeMode.light,
+            home: const SplashScreen(),
+            routes: {
+              HomeScreen.routeName: (ctx) => const HomeScreen(),
+              BranchSelectionScreen.routeName: (ctx) => const BranchSelectionScreen(),
+              OffersScreen.routeName: (ctx) => const OffersScreen(),
+              FavoritesScreen.routeName: (ctx) => const FavoritesScreen(),
+              SettingsScreen.routeName: (ctx) => const SettingsScreen(),
+              CartScreen.routeName: (ctx) => const CartScreen(),
+              AdminLoginScreen.routeName: (ctx) => const AdminLoginScreen(),
+              AdminDashboardScreen.routeName: (ctx) => const AdminDashboardScreen(),
+              ClientLoginScreen.routeName: (ctx) => const ClientLoginScreen(),
+              ClientRegisterScreen.routeName: (ctx) => const ClientRegisterScreen(),
+              ClientProfileScreen.routeName: (ctx) => const ClientProfileScreen(),
+              NotificationScreen.routeName: (ctx) => const NotificationScreen(),
+              OrdersScreen.routeName: (ctx) => const OrdersScreen(),
+              MenuScreen.routeName: (ctx) => const MenuScreen(),
+            },
+          );
         },
       ),
     );

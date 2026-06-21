@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/client_provider.dart';
+import '../providers/theme_provider.dart';
 import '../widgets/top_actions.dart';
+import '../widgets/app_drawer.dart';
 import '../widgets/bottom_nav_bar.dart';
 import '../utils/helpers.dart';
 import 'client_login_screen.dart';
@@ -24,7 +26,6 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
   late TextEditingController _addressController;
   late TextEditingController _landmarkController;
   bool _isSaving = false;
-  bool _darkThemeValue = false;
 
   @override
   void initState() {
@@ -63,10 +64,11 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
     setState(() => _isSaving = false);
 
     if (mounted) {
+      final colorScheme = Theme.of(context).colorScheme;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(success ? 'Profile updated successfully!' : (clientProvider.error ?? 'Failed to update profile')),
-          backgroundColor: success ? Colors.green : Colors.red,
+          backgroundColor: success ? colorScheme.secondary : colorScheme.error,
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -74,11 +76,12 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
   }
 
   void _handleLogout() async {
+    final colorScheme = Theme.of(context).colorScheme;
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Sign Out?'),
+        title: Text('Sign Out?', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
         content: const Text('Are you sure you want to sign out?'),
         actions: [
           TextButton(
@@ -87,7 +90,7 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            style: TextButton.styleFrom(foregroundColor: colorScheme.error),
             child: const Text('Sign Out'),
           ),
         ],
@@ -106,13 +109,17 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
   }
 
   void _handleDeleteAccount() async {
+    final colorScheme = Theme.of(context).colorScheme;
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
+        title: Text(
           'Delete Account?',
-          style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+            color: colorScheme.error,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         content: const Text(
           'Warning: This action is permanent and cannot be undone. All your details will be erased permanently.',
@@ -124,7 +131,7 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            style: TextButton.styleFrom(foregroundColor: colorScheme.error),
             child: const Text('Delete Permanently'),
           ),
         ],
@@ -136,10 +143,10 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
       await context.read<ClientProvider>().logout();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Account deleted successfully.'),
-            backgroundColor: Colors.grey,
+          SnackBar(
+            content: const Text('Account deleted successfully.'),
             behavior: SnackBarBehavior.floating,
+            backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
           ),
         );
         Navigator.of(context).pushAndRemoveUntil(
@@ -165,6 +172,7 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
     final isMobile = ResponsiveUtil.isMobile(size.width);
     final clientProvider = context.watch<ClientProvider>();
     final client = clientProvider.currentClient;
+    final themeProv = context.watch<ThemeProvider>();
 
     if (!clientProvider.isAuthenticated || client == null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -175,18 +183,26 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
 
     final initials = _getInitials(client.fullName);
 
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: theme.scaffoldBackgroundColor,
+      endDrawer: const AppDrawer(),
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'My Profile',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.deepOrange),
+          style: textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: colorScheme.primary,
+          ),
         ),
         centerTitle: true,
-        backgroundColor: Colors.white,
+        backgroundColor: theme.scaffoldBackgroundColor,
         elevation: 0,
         shape: Border(
-          bottom: BorderSide(color: Colors.grey.shade100),
+          bottom: BorderSide(color: theme.dividerColor),
         ),
         actions: const [
           TopActions(),
@@ -208,11 +224,11 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
                   // User Profile header card
                   Card(
                     elevation: 1,
-                    shadowColor: Colors.black.withOpacity(0.05),
+                    shadowColor: colorScheme.onSurface.withOpacity(0.05),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(24),
                     ),
-                    color: Colors.white,
+                    color: theme.cardColor,
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
                       child: Center(
@@ -220,31 +236,29 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
                           children: [
                             CircleAvatar(
                               radius: 46,
-                              backgroundColor: Colors.pink.shade50,
+                              backgroundColor: colorScheme.primaryContainer,
                               child: Text(
                                 initials,
-                                style: const TextStyle(
+                                style: textTheme.headlineLarge?.copyWith(
                                   fontSize: 32,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.red,
+                                  color: colorScheme.onPrimaryContainer,
                                 ),
                               ),
                             ),
                             const SizedBox(height: 16),
                             Text(
                               client.fullName,
-                              style: const TextStyle(
-                                fontSize: 22,
+                              style: textTheme.headlineSmall?.copyWith(
                                 fontWeight: FontWeight.bold,
-                                color: Colors.black87,
+                                color: colorScheme.onSurface,
                               ),
                             ),
                             const SizedBox(height: 4),
                             Text(
                               client.phone,
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey.shade600,
+                              style: textTheme.bodyMedium?.copyWith(
+                                color: colorScheme.onSurfaceVariant,
                               ),
                             ),
                             const SizedBox(height: 16),
@@ -253,16 +267,16 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
                               children: [
                                 _buildBadge(
                                   icon: Icons.emoji_events_outlined,
-                                  label: '180 PTS',
-                                  color: Colors.amber.shade700,
-                                  bgColor: Colors.amber.shade50,
+                                  label: '${client.loyaltyPoints} PTS',
+                                  color: colorScheme.primary,
+                                  bgColor: colorScheme.primaryContainer,
                                 ),
                                 const SizedBox(width: 12),
                                 _buildBadge(
                                   icon: Icons.favorite_border,
                                   label: '0',
-                                  color: Colors.red.shade700,
-                                  bgColor: Colors.red.shade50,
+                                  color: colorScheme.error,
+                                  bgColor: colorScheme.errorContainer,
                                 ),
                               ],
                             ),
@@ -274,23 +288,23 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
                   const SizedBox(height: 24),
 
                   // Delivery Info Section
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
                     child: Text(
                       'DELIVERY INFO',
-                      style: TextStyle(
+                      style: textTheme.labelSmall?.copyWith(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
-                        color: Colors.red,
+                        color: colorScheme.primary,
                         letterSpacing: 1.0,
                       ),
                     ),
                   ),
                   Card(
                     elevation: 1,
-                    shadowColor: Colors.black.withOpacity(0.05),
+                    shadowColor: colorScheme.onSurface.withOpacity(0.05),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                    color: Colors.white,
+                    color: theme.cardColor,
                     child: Padding(
                       padding: const EdgeInsets.all(20),
                       child: Column(
@@ -331,25 +345,26 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
                             child: ElevatedButton.icon(
                               onPressed: _isSaving ? null : _saveChanges,
                               icon: _isSaving
-                                  ? const SizedBox(
+                                  ? SizedBox(
                                       width: 20,
                                       height: 20,
                                       child: CircularProgressIndicator(
-                                        color: Colors.white,
+                                        color: colorScheme.onPrimary,
                                         strokeWidth: 2,
                                       ),
                                     )
-                                  : const Icon(Icons.save_outlined, color: Colors.white),
-                              label: const Text(
+                                  : Icon(Icons.save_outlined, color: colorScheme.onPrimary),
+                              label: Text(
                                 'Save Changes',
-                                style: TextStyle(
+                                style: textTheme.labelLarge?.copyWith(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.white,
+                                  color: colorScheme.onPrimary,
                                 ),
                               ),
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.red,
+                                backgroundColor: colorScheme.primary,
+                                foregroundColor: colorScheme.onPrimary,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
@@ -363,14 +378,14 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
                   const SizedBox(height: 24),
 
                   // Order History Section
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
                     child: Text(
                       'ORDER HISTORY',
-                      style: TextStyle(
+                      style: textTheme.labelSmall?.copyWith(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
-                        color: Colors.red,
+                        color: colorScheme.primary,
                         letterSpacing: 1.0,
                       ),
                     ),
@@ -386,59 +401,71 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
                   const SizedBox(height: 24),
 
                   // App Preferences Section
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
                     child: Text(
                       'APP PREFERENCES',
-                      style: TextStyle(
+                      style: textTheme.labelSmall?.copyWith(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
-                        color: Colors.red,
+                        color: colorScheme.primary,
                         letterSpacing: 1.0,
                       ),
                     ),
                   ),
                   Card(
                     elevation: 1,
-                    shadowColor: Colors.black.withOpacity(0.05),
+                    shadowColor: colorScheme.onSurface.withOpacity(0.05),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                    color: Colors.white,
+                    color: theme.cardColor,
                     child: Column(
                       children: [
                         ListTile(
                           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                           leading: CircleAvatar(
-                            backgroundColor: Colors.red.shade50,
-                            child: const Icon(Icons.wb_sunny_outlined, color: Colors.red),
+                            backgroundColor: colorScheme.primaryContainer,
+                            child: Icon(Icons.wb_sunny_outlined, color: colorScheme.primary),
                           ),
-                          title: const Text(
+                          title: Text(
                             'Dark Theme',
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                            style: textTheme.bodyLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: colorScheme.onSurface,
+                              fontSize: 15,
+                            ),
                           ),
-                          subtitle: Text(_darkThemeValue ? 'ON' : 'OFF'),
+                          subtitle: Text(
+                            themeProv.isDarkMode ? 'ON' : 'OFF',
+                            style: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
+                          ),
                           trailing: Switch(
-                            value: _darkThemeValue,
-                            activeColor: Colors.red,
+                            value: themeProv.isDarkMode,
+                            activeColor: colorScheme.primary,
                             onChanged: (val) {
-                              setState(() {
-                                _darkThemeValue = val;
-                              });
+                              themeProv.setDarkMode(val);
                             },
                           ),
                         ),
-                        const Divider(height: 1, indent: 70),
+                        Divider(height: 1, indent: 70, color: theme.dividerColor),
                         ListTile(
                           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                           leading: CircleAvatar(
-                            backgroundColor: Colors.red.shade50,
-                            child: const Icon(Icons.language, color: Colors.red),
+                            backgroundColor: colorScheme.primaryContainer,
+                            child: Icon(Icons.language, color: colorScheme.primary),
                           ),
-                          title: const Text(
+                          title: Text(
                             'Application Language',
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                            style: textTheme.bodyLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: colorScheme.onSurface,
+                              fontSize: 15,
+                            ),
                           ),
-                          subtitle: const Text('ENGLISH (LTR)'),
-                          trailing: const Icon(Icons.chevron_right, color: Colors.grey),
+                          subtitle: Text(
+                            'ENGLISH (LTR)',
+                            style: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
+                          ),
+                          trailing: Icon(Icons.chevron_right, color: colorScheme.onSurfaceVariant),
                           onTap: () {
                             // Language selection placeholder
                           },
@@ -449,50 +476,64 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
                   const SizedBox(height: 24),
 
                   // More Settings Section
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
                     child: Text(
                       'MORE SETTINGS',
-                      style: TextStyle(
+                      style: textTheme.labelSmall?.copyWith(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
-                        color: Colors.red,
+                        color: colorScheme.primary,
                         letterSpacing: 1.0,
                       ),
                     ),
                   ),
                   Card(
                     elevation: 1,
-                    shadowColor: Colors.black.withOpacity(0.05),
+                    shadowColor: colorScheme.onSurface.withOpacity(0.05),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                    color: Colors.white,
+                    color: theme.cardColor,
                     child: Column(
                       children: [
                         ListTile(
                           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                           leading: CircleAvatar(
-                            backgroundColor: Colors.grey.shade100,
-                            child: const Icon(Icons.logout, color: Colors.black54),
+                            backgroundColor: colorScheme.surfaceVariant,
+                            child: Icon(Icons.logout, color: colorScheme.onSurfaceVariant),
                           ),
-                          title: const Text(
+                          title: Text(
                             'Logout Session',
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                            style: textTheme.bodyLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: colorScheme.onSurface,
+                              fontSize: 15,
+                            ),
                           ),
-                          subtitle: const Text('END ACTIVE SESSION'),
+                          subtitle: Text(
+                            'END ACTIVE SESSION',
+                            style: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
+                          ),
                           onTap: _handleLogout,
                         ),
-                        const Divider(height: 1, indent: 70),
+                        Divider(height: 1, indent: 70, color: theme.dividerColor),
                         ListTile(
                           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                           leading: CircleAvatar(
-                            backgroundColor: Colors.red.shade50,
-                            child: const Icon(Icons.delete_outline, color: Colors.red),
+                            backgroundColor: colorScheme.errorContainer,
+                            child: Icon(Icons.delete_outline, color: colorScheme.onErrorContainer),
                           ),
-                          title: const Text(
+                          title: Text(
                             'Delete Account',
-                            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red, fontSize: 15),
+                            style: textTheme.bodyLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: colorScheme.error,
+                              fontSize: 15,
+                            ),
                           ),
-                          subtitle: const Text('ERASE DATA PERMANENTLY'),
+                          subtitle: Text(
+                            'ERASE DATA PERMANENTLY',
+                            style: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
+                          ),
                           onTap: _handleDeleteAccount,
                         ),
                       ],
@@ -569,23 +610,34 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
     required String subtitle,
     required VoidCallback onTap,
   }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
     return Card(
       elevation: 1,
-      shadowColor: Colors.black.withOpacity(0.05),
+      shadowColor: colorScheme.onSurface.withOpacity(0.05),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      color: Colors.white,
+      color: theme.cardColor,
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         leading: CircleAvatar(
-          backgroundColor: Colors.red.shade50,
-          child: Icon(icon, color: Colors.red),
+          backgroundColor: colorScheme.primaryContainer,
+          child: Icon(icon, color: colorScheme.primary),
         ),
         title: Text(
           title,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+          style: textTheme.bodyLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+            fontSize: 15,
+            color: colorScheme.onSurface,
+          ),
         ),
-        subtitle: Text(subtitle),
-        trailing: const Icon(Icons.chevron_right, color: Colors.grey),
+        subtitle: Text(
+          subtitle,
+          style: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
+        ),
+        trailing: Icon(Icons.chevron_right, color: colorScheme.onSurfaceVariant),
         onTap: onTap,
       ),
     );

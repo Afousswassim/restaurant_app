@@ -22,10 +22,12 @@ class CategoryChip extends StatelessWidget {
         onSelected: (_) => onTap(),
         backgroundColor: Colors.grey.shade200,
         selectedColor: Colors.deepOrange,
+        showCheckmark: false,
         labelStyle: TextStyle(
           color: isSelected ? Colors.white : Colors.black,
-          fontWeight: FontWeight.w500,
+          fontWeight: FontWeight.w600,
         ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
     );
   }

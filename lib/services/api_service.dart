@@ -4,6 +4,7 @@ import '../models/branch.dart';
 import '../models/menu_item.dart';
 import '../models/cart_item.dart';
 import '../models/order.dart';
+import '../models/notification.dart';
 import '../config/app_config.dart';
 
 class ApiService {
@@ -213,6 +214,8 @@ class ApiService {
     String? paymentMethod,
     String? notes,
     String? clientId,
+    double? discount,
+    String? couponCode,
   }) async {
     final data = await _makeRequest(
       'POST',
@@ -226,9 +229,36 @@ class ApiService {
         'paymentMethod': paymentMethod ?? 'cash',
         'notes': notes ?? '',
         if (clientId != null) 'clientId': clientId,
+        if (discount != null) 'discount': discount,
+        if (couponCode != null) 'couponCode': couponCode,
       },
     );
     return Order.fromJson(data as Map<String, dynamic>);
+  }
+
+  // Coupon & Loyalty endpoints
+  static Future<Map<String, dynamic>> validateCoupon(String code, double subtotal) async {
+    final data = await _makeRequest(
+      'POST',
+      '/coupons/validate',
+      body: {
+        'code': code,
+        'subtotal': subtotal,
+      },
+    );
+    return data as Map<String, dynamic>;
+  }
+
+  static Future<Map<String, dynamic>> redeemReward(String clientId, String rewardType) async {
+    final data = await _makeRequest(
+      'POST',
+      '/coupons/redeem',
+      body: {
+        'clientId': clientId,
+        'rewardType': rewardType,
+      },
+    );
+    return data as Map<String, dynamic>;
   }
 
   // Client endpoints
@@ -313,6 +343,46 @@ class ApiService {
     return (data as List)
         .map((item) => Order.fromJson(item as Map<String, dynamic>))
         .toList();
+  }
+
+  static Future<List<NotificationItem>> getNotifications(String clientId) async {
+    final data = await _makeRequest('GET', '/notifications/$clientId');
+    return (data as List)
+        .map((item) => NotificationItem.fromJson(item as Map<String, dynamic>))
+        .toList();
+  }
+
+  static Future<NotificationItem> createNotification({
+    required String clientId,
+    required String orderId,
+    required String title,
+    required String message,
+  }) async {
+    final data = await _makeRequest(
+      'POST',
+      '/notifications',
+      body: {
+        'clientId': clientId,
+        'orderId': orderId,
+        'title': title,
+        'message': message,
+      },
+    );
+    return NotificationItem.fromJson(data as Map<String, dynamic>);
+  }
+
+  static Future<void> markNotificationAsRead(String id) async {
+    await _makeRequest(
+      'PUT',
+      '/notifications/$id/read',
+    );
+  }
+
+  static Future<void> markAllNotificationsAsRead(String clientId) async {
+    await _makeRequest(
+      'PUT',
+      '/notifications/$clientId/read-all',
+    );
   }
 
   // Admin login API call

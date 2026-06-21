@@ -25,7 +25,7 @@ class ClientProvider with ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       if (prefs.containsKey('client_token')) {
         _token = prefs.getString('client_token');
-        final clientJson = prefs.getString('client_info');
+        final clientJson = prefs.getString('client_data');
         if (clientJson != null) {
           _currentClient = Client.fromJson(jsonDecode(clientJson));
         }
@@ -56,7 +56,7 @@ class ClientProvider with ChangeNotifier {
 
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('client_token', _token!);
-      await prefs.setString('client_info', jsonEncode(_currentClient!.toJson()));
+      await prefs.setString('client_data', jsonEncode(_currentClient!.toJson()));
 
       _error = null;
       _isLoading = false;
@@ -88,7 +88,7 @@ class ClientProvider with ChangeNotifier {
 
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('client_token', _token!);
-      await prefs.setString('client_info', jsonEncode(_currentClient!.toJson()));
+      await prefs.setString('client_data', jsonEncode(_currentClient!.toJson()));
 
       _error = null;
       _isLoading = false;
@@ -108,7 +108,7 @@ class ClientProvider with ChangeNotifier {
     _error = null;
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('client_token');
-    await prefs.remove('client_info');
+    await prefs.remove('client_data');
     notifyListeners();
   }
 
@@ -134,7 +134,7 @@ class ClientProvider with ChangeNotifier {
       _currentClient = Client.fromJson(updatedClientData);
 
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('client_info', jsonEncode(_currentClient!.toJson()));
+      await prefs.setString('client_data', jsonEncode(_currentClient!.toJson()));
 
       _error = null;
       _isLoading = false;
@@ -145,6 +145,47 @@ class ClientProvider with ChangeNotifier {
       _isLoading = false;
       notifyListeners();
       return false;
+    }
+  }
+
+  Future<void> refreshProfile() async {
+    if (_token == null) return;
+    try {
+      final clientData = await ApiService.getClientProfile(_token!);
+      _currentClient = Client.fromJson(clientData);
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('client_data', jsonEncode(_currentClient!.toJson()));
+      notifyListeners();
+    } catch (_) {}
+  }
+
+  Future<Map<String, dynamic>?> redeemReward(String rewardType) async {
+    if (_currentClient == null) return null;
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final res = await ApiService.redeemReward(_currentClient!.id, rewardType);
+      
+      // Update client from response
+      final updatedClientData = res['client'] as Map<String, dynamic>;
+      _currentClient = Client.fromJson(updatedClientData);
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('client_data', jsonEncode(_currentClient!.toJson()));
+
+      _isLoading = false;
+      notifyListeners();
+      return {
+        'couponCode': res['coupon']['code'],
+        'rewardValue': res['coupon']['value'],
+      };
+    } catch (e) {
+      _error = e.toString().replaceAll('Exception: ', '');
+      _isLoading = false;
+      notifyListeners();
+      throw e;
     }
   }
 }

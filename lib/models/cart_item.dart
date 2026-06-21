@@ -40,7 +40,7 @@ class CartItem {
 
   double get unitPrice {
     double extrasPrice = selectedExtras.fold(0.0, (sum, extra) => sum + extra.price);
-    return menuItem.price + extrasPrice;
+    return menuItem.effectivePrice + extrasPrice;
   }
 
   double get totalPrice => unitPrice * quantity;

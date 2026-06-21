@@ -4,6 +4,8 @@ import '../models/menu_item.dart';
 import '../providers/branch_provider.dart';
 import '../providers/cart_provider.dart';
 import '../utils/helpers.dart';
+import '../widgets/top_actions.dart';
+import '../widgets/app_drawer.dart';
 
 class FoodDetailsScreen extends StatefulWidget {
   final MenuItem menuItem;
@@ -33,7 +35,7 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
 
   double get _unitPrice {
     double extraCost = _selectedExtras.fold(0.0, (sum, extra) => sum + extra.price);
-    return widget.menuItem.price + extraCost;
+    return widget.menuItem.effectivePrice + extraCost;
   }
 
   double get _totalPrice => _unitPrice * _quantity;
@@ -81,234 +83,354 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-    final isMobile = ResponsiveUtil.isMobile(size.width);
+    final isMobile = size.width < 600;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final item = widget.menuItem;
+    final hasActiveOffer = item.hasOffer && item.offerPrice != null && item.effectivePrice == item.offerPrice;
 
     return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
+      endDrawer: const AppDrawer(),
       appBar: AppBar(
-        title: Text(widget.menuItem.name),
-        backgroundColor: Colors.deepOrange,
-        foregroundColor: Colors.white,
-      ),
-      body: Center(
-        child: Container(
-          constraints: BoxConstraints(
-            maxWidth: isMobile ? double.infinity : 600,
+        backgroundColor: theme.scaffoldBackgroundColor,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: colorScheme.onSurface),
+          onPressed: () => Navigator.of(context).maybePop(),
+        ),
+        title: Text(
+          item.name,
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: colorScheme.primary,
           ),
-          child: Column(
-            children: [
-              Expanded(
-                child: SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+        ),
+        centerTitle: true,
+        actions: const [
+          TopActions(),
+          SizedBox(width: 8),
+        ],
+      ),
+      body: SafeArea(
+        child: Column(
+          children: [
+            Expanded(
+              child: Center(
+                child: Container(
+                  constraints: const BoxConstraints(maxWidth: 600),
+                  child: ListView(
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     children: [
-                      // Food Image
-                      Image.network(
-                        widget.menuItem.imageUrl.isNotEmpty
-                            ? widget.menuItem.imageUrl
-                            : 'https://images.unsplash.com/photo-1495195134139-0d4517b28b9f?w=600&h=300&fit=crop',
+                      // Product Image Box
+                      Container(
                         width: double.infinity,
                         height: 250,
-                        fit: BoxFit.cover,
-                        loadingBuilder: (context, child, loadingProgress) {
-                          if (loadingProgress == null) return child;
-                          return Container(
-                            height: 250,
-                            color: Colors.grey.shade100,
-                            child: const Center(
-                              child: CircularProgressIndicator(color: Colors.deepOrange),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(24),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 10,
+                              offset: const Offset(0, 5),
                             ),
-                          );
-                        },
-                        errorBuilder: (context, error, stackTrace) => Container(
-                          height: 250,
-                          color: Colors.grey.shade200,
-                          child: const Icon(Icons.fastfood, size: 80, color: Colors.grey),
+                          ],
+                        ),
+                        child: Stack(
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(24),
+                              child: Image.network(
+                                item.imageUrl.isNotEmpty
+                                    ? item.imageUrl
+                                    : 'https://images.unsplash.com/photo-1495195134139-0d4517b28b9f?w=600&h=300&fit=crop',
+                                width: double.infinity,
+                                height: 250,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) => Container(
+                                  height: 250,
+                                  color: theme.cardColor,
+                                  child: Icon(Icons.fastfood, size: 80, color: theme.dividerColor),
+                                ),
+                              ),
+                            ),
+                            if (hasActiveOffer && item.offerLabel != null)
+                              Positioned(
+                                top: 16,
+                                left: 16,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    item.offerLabel!,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
                       ),
+                      const SizedBox(height: 24),
 
-                      Padding(
-                        padding: const EdgeInsets.all(20),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Name & Price
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      // Product Info Card
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Expanded(
+                                Text(
+                                  item.name,
+                                  style: theme.textTheme.headlineSmall?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: colorScheme.onSurface,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Row(
+                                  children: [
+                                    Icon(Icons.star, color: Colors.amber.shade600, size: 18),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      item.rating.toStringAsFixed(1),
+                                      style: theme.textTheme.bodyMedium?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                        color: colorScheme.onSurface,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              if (hasActiveOffer)
+                                Text(
+                                  CurrencyFormatter.formatDH(item.price),
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    color: colorScheme.onSurface.withOpacity(0.5),
+                                    decoration: TextDecoration.lineThrough,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              Text(
+                                CurrencyFormatter.formatDH(item.effectivePrice),
+                                style: theme.textTheme.headlineSmall?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.deepOrange,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        item.description,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                          height: 1.5,
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+
+                      // Extras
+                      if (item.extras.isNotEmpty) ...[
+                        Text(
+                          'Customize Your Order',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: colorScheme.onSurface,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        ...item.extras.map((extra) {
+                          final isSelected = _selectedExtras.contains(extra);
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 10),
+                            decoration: BoxDecoration(
+                              color: theme.cardColor,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: isSelected ? Colors.deepOrange : theme.dividerColor.withOpacity(0.5),
+                                width: isSelected ? 2 : 1,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.02),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: CheckboxListTile(
+                              title: Text(
+                                extra.name,
+                                style: theme.textTheme.bodyLarge?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color: colorScheme.onSurface,
+                                ),
+                              ),
+                              subtitle: Text(
+                                '+${CurrencyFormatter.formatDH(extra.price)}',
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: Colors.deepOrange,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              value: isSelected,
+                              onChanged: (_) => _toggleExtra(extra),
+                              activeColor: Colors.deepOrange,
+                              checkboxShape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                            ),
+                          );
+                        }).toList(),
+                        const SizedBox(height: 24),
+                      ],
+
+                      // Quantity Section
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Quantity',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: colorScheme.onSurface,
+                            ),
+                          ),
+                          Container(
+                            decoration: BoxDecoration(
+                              color: theme.cardColor,
+                              borderRadius: BorderRadius.circular(24),
+                              border: Border.all(color: theme.dividerColor.withOpacity(0.5)),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.02),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+                                IconButton(
+                                  onPressed: _quantity > 1 ? () => setState(() => _quantity--) : null,
+                                  icon: Icon(Icons.remove, color: _quantity > 1 ? colorScheme.onSurface : theme.disabledColor),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8),
                                   child: Text(
-                                    widget.menuItem.name,
-                                    style: const TextStyle(
-                                      fontSize: 22,
+                                    '$_quantity',
+                                    style: theme.textTheme.titleMedium?.copyWith(
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
                                 ),
-                                const SizedBox(width: 12),
+                                IconButton(
+                                  onPressed: () => setState(() => _quantity++),
+                                  icon: Icon(Icons.add, color: colorScheme.onSurface),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 40),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+            // Sticky Bottom Bar
+            Container(
+              decoration: BoxDecoration(
+                color: theme.cardColor,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    offset: const Offset(0, -4),
+                    blurRadius: 10,
+                  ),
+                ],
+              ),
+              child: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  child: Center(
+                    child: Container(
+                      constraints: const BoxConstraints(maxWidth: 600),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
                                 Text(
-                                  CurrencyFormatter.formatDH(widget.menuItem.price),
-                                  style: const TextStyle(
-                                    fontSize: 22,
+                                  'Total Price',
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: colorScheme.onSurfaceVariant,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  CurrencyFormatter.formatDH(_totalPrice),
+                                  style: theme.textTheme.titleLarge?.copyWith(
                                     fontWeight: FontWeight.bold,
                                     color: Colors.deepOrange,
                                   ),
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 12),
-
-                            // Description
-                            Text(
-                              widget.menuItem.description,
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey.shade600,
-                                height: 1.5,
+                          ),
+                          Expanded(
+                            flex: 1,
+                            child: ElevatedButton(
+                              onPressed: _onAddToCart,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.deepOrange,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 24),
-
-                            // Extras section
-                            if (widget.menuItem.extras.isNotEmpty) ...[
-                              const Text(
-                                'Customize Your Order',
+                              child: const Text(
+                                'Add to Cart',
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
-                              const SizedBox(height: 8),
-                              ListView.builder(
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                itemCount: widget.menuItem.extras.length,
-                                itemBuilder: (context, index) {
-                                  final extra = widget.menuItem.extras[index];
-                                  final isSelected = _selectedExtras.contains(extra);
-
-                                  return CheckboxListTile(
-                                    title: Text(extra.name),
-                                    subtitle: Text('+${CurrencyFormatter.formatDH(extra.price)}'),
-                                    value: isSelected,
-                                    onChanged: (_) => _toggleExtra(extra),
-                                    activeColor: Colors.deepOrange,
-                                    contentPadding: EdgeInsets.zero,
-                                  );
-                                },
-                              ),
-                              const SizedBox(height: 24),
-                            ],
-
-                            // Quantity Selector
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                const Text(
-                                  'Quantity',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                Row(
-                                  children: [
-                                    IconButton(
-                                      onPressed: _quantity > 1
-                                          ? () => setState(() => _quantity--)
-                                          : null,
-                                      icon: const Icon(Icons.remove_circle_outline, size: 28),
-                                    ),
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                                      child: Text(
-                                        '$_quantity',
-                                        style: const TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-                                    IconButton(
-                                      onPressed: () => setState(() => _quantity++),
-                                      icon: const Icon(Icons.add_circle_outline, size: 28),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 32),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              // Bottom Total and Add Button
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      offset: const Offset(0, -4),
-                      blurRadius: 10,
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Text(
-                            'Total Price',
-                            style: TextStyle(fontSize: 12, color: Colors.grey),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            CurrencyFormatter.formatDH(_totalPrice),
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.deepOrange,
                             ),
                           ),
                         ],
                       ),
                     ),
-                    Expanded(
-                      flex: 2,
-                      child: ElevatedButton(
-                        onPressed: _onAddToCart,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.deepOrange,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                        ),
-                        child: const Text(
-                          'Add to Cart',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/cart_provider.dart';
 import '../providers/client_provider.dart';
 import '../screens/home_screen.dart';
+import '../screens/menu_screen.dart';
 import '../screens/cart_screen.dart';
 import '../screens/client_login_screen.dart';
 import '../screens/client_profile_screen.dart';
@@ -211,7 +212,7 @@ class BottomNavBar extends StatelessWidget {
         break;
       case 1:
         Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => const HomeScreen(scrollToMenu: true)),
+          MaterialPageRoute(builder: (_) => const MenuScreen()),
           (route) => false,
         );
         break;

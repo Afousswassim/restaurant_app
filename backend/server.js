@@ -8,8 +8,10 @@ const branchRoutes = require('./routes/branches');
 const menuRoutes = require('./routes/menu');
 const cartRoutes = require('./routes/cart');
 const orderRoutes = require('./routes/orders');
+const notificationRoutes = require('./routes/notifications');
 const adminRoutes = require('./routes/adminRoutes');
 const clientRoutes = require('./routes/clients');
+const couponRoutes = require('./routes/coupons');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
@@ -25,8 +27,10 @@ app.use('/branches', branchRoutes);
 app.use('/menu', menuRoutes);
 app.use('/cart', cartRoutes);
 app.use('/orders', orderRoutes);
+app.use('/notifications', notificationRoutes);
 app.use('/admin', adminRoutes);
 app.use('/clients', clientRoutes);
+app.use('/coupons', couponRoutes);
 
 app.get('/health', (req, res) => {
   res.status(200).json({

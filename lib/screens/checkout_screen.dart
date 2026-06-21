@@ -77,6 +77,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         paymentMethod: _paymentMethod,
         notes: _notesController.text.trim(),
         clientId: clientId,
+        discount: cartProvider.couponDiscount,
+        couponCode: cartProvider.appliedCouponCode,
       );
 
       if (!mounted) return;
@@ -88,6 +90,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         await prefs.setStringList('local_orders', localOrders);
 
         await cartProvider.clearCart();
+        cartProvider.removeCoupon();
+
+        if (clientProvider.isAuthenticated) {
+          await clientProvider.refreshProfile();
+        }
 
         if (!mounted) return;
 
@@ -196,9 +203,28 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text('Delivery Fee'),
-                Text(CurrencyFormatter.formatDH(cartProvider.deliveryFee)),
+                Text(
+                  cartProvider.deliveryFee == 0.0 && cartProvider.appliedCouponCode != null 
+                      ? 'FREE' 
+                      : CurrencyFormatter.formatDH(cartProvider.deliveryFee)
+                ),
               ],
             ),
+            if (cartProvider.appliedCouponCode != null && cartProvider.couponDiscount > 0) ...[
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Discount (${cartProvider.appliedCouponCode})'),
+                  Text(
+                    '- ${CurrencyFormatter.formatDH(cartProvider.couponDiscount)}',
+                    style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+            ],
+            const Divider(height: 24),
+            _buildPromoCodeSection(cartProvider),
             const Divider(height: 24),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -223,6 +249,97 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildPromoCodeSection(CartProvider cartProvider) {
+    if (cartProvider.appliedCouponCode != null) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.green.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.green.withOpacity(0.3)),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.local_offer, color: Colors.green, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  'Code Applied: ${cartProvider.appliedCouponCode}',
+                  style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 13),
+                ),
+              ],
+            ),
+            IconButton(
+              icon: const Icon(Icons.close, color: Colors.red),
+              onPressed: () {
+                cartProvider.removeCoupon();
+              },
+            )
+          ],
+        ),
+      );
+    }
+
+    final promoController = TextEditingController();
+
+    return Row(
+      children: [
+        Expanded(
+          child: TextFormField(
+            controller: promoController,
+            decoration: InputDecoration(
+              hintText: 'Enter Promo Code',
+              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        ElevatedButton(
+          onPressed: () async {
+            final code = promoController.text.trim();
+            if (code.isEmpty) return;
+            try {
+              await cartProvider.applyCouponCode(code);
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Coupon "$code" applied!'),
+                    backgroundColor: Colors.green,
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              }
+            } catch (e) {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(e.toString().replaceAll('Exception: ', '')),
+                    backgroundColor: Colors.red,
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              }
+            }
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.deepOrange,
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+          ),
+          child: const Text('Apply'),
+        ),
+      ],
     );
   }
 

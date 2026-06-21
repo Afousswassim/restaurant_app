@@ -8,6 +8,7 @@ import 'home_screen.dart';
 import 'admin_login_screen.dart';
 
 class BranchSelectionScreen extends StatefulWidget {
+  static const routeName = '/branch-selection';
   const BranchSelectionScreen({Key? key}) : super(key: key);
 
   @override

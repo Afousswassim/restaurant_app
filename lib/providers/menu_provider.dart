@@ -4,21 +4,36 @@ import '../services/api_service.dart';
 
 class MenuProvider with ChangeNotifier {
   List<MenuItem> _menuItems = [];
-  String _selectedCategory = 'Burger'; // Default to first category 'Burger'
+  String _selectedCategory = 'All'; // Default to show all categories
+  String _searchTerm = '';
   bool _isLoading = false;
   String? _error;
 
   List<MenuItem> get menuItems {
-    if (_selectedCategory == 'All') {
-      return _menuItems;
+    // Start from all items
+    List<MenuItem> items = List<MenuItem>.from(_menuItems);
+
+    // Filter by category if not 'All'
+    if (_selectedCategory.toLowerCase() != 'all') {
+      items = items.where((item) => item.category.toLowerCase() == _selectedCategory.toLowerCase()).toList();
     }
-    return _menuItems
-        .where((item) => item.category.toLowerCase() == _selectedCategory.toLowerCase())
-        .toList();
+
+    // Filter by search term if provided
+    final term = _searchTerm.trim().toLowerCase();
+    if (term.isNotEmpty) {
+      items = items.where((item) {
+        final name = item.name.toLowerCase();
+        final desc = item.description.toLowerCase();
+        return name.contains(term) || desc.contains(term);
+      }).toList();
+    }
+
+    return items;
   }
 
   List<MenuItem> get rawMenuItems => _menuItems;
   String get selectedCategory => _selectedCategory;
+  String get searchTerm => _searchTerm;
   bool get isLoading => _isLoading;
   String? get error => _error;
 
@@ -45,6 +60,13 @@ class MenuProvider with ChangeNotifier {
 
   void selectCategory(String category) {
     _selectedCategory = category;
+    // clear search when switching category
+    _searchTerm = '';
+    notifyListeners();
+  }
+
+  void setSearchTerm(String term) {
+    _searchTerm = term;
     notifyListeners();
   }
 }

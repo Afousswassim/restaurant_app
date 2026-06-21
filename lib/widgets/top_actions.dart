@@ -1,66 +1,101 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/client_provider.dart';
+import '../providers/notification_provider.dart';
+import '../providers/theme_provider.dart';
+import '../screens/notification_screen.dart';
 
 class TopActions extends StatelessWidget {
   const TopActions({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        _buildActionButton(
-          child: const Icon(
-            Icons.notifications_none,
-            color: Colors.black54,
-            size: 20,
-          ),
-          onTap: () {
-            // Notifications feature placeholder
-          },
-        ),
-        const SizedBox(width: 8),
-        _buildActionButton(
-          child: const Icon(
-            Icons.dark_mode_outlined,
-            color: Colors.black54,
-            size: 20,
-          ),
-          onTap: () {
-            // Dark mode toggle placeholder
-          },
-        ),
-        const SizedBox(width: 8),
-        _buildActionButton(
-          child: const Text(
-            'DH',
-            style: TextStyle(
-              color: Colors.black54,
-              fontWeight: FontWeight.bold,
-              fontSize: 12,
+    return Consumer3<NotificationProvider, ThemeProvider, ClientProvider>(
+      builder: (context, notificationProv, themeProv, clientProv, _) {
+        final theme = Theme.of(context);
+        final isDark = themeProv.isDarkMode;
+        final iconColor = theme.colorScheme.onSurface;
+        final badgeCount = notificationProv.unreadCount;
+        final scaffoldState = Scaffold.maybeOf(context);
+        final hasEndDrawer = scaffoldState?.widget.endDrawer != null;
+
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (hasEndDrawer)
+              Row(
+                children: [
+                  _buildActionButton(
+                    context: context,
+                    child: Icon(Icons.menu, color: iconColor, size: 20),
+                    onTap: scaffoldState?.openEndDrawer ?? () {},
+                  ),
+                  const SizedBox(width: 10),
+                ],
+              ),
+            _buildActionButton(
+              context: context,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Icon(
+                    Icons.notifications_none,
+                    color: iconColor,
+                    size: 20,
+                  ),
+                  if (badgeCount > 0)
+                    Positioned(
+                      right: -2,
+                      top: -2,
+                      child: Container(
+                        width: 10,
+                        height: 10,
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.error,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: theme.scaffoldBackgroundColor, width: 1.5),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              onTap: () {
+                if (clientProv.currentClient != null) {
+                  notificationProv.loadNotifications(clientProv.currentClient!.id);
+                }
+                Navigator.of(context).pushNamed(NotificationScreen.routeName);
+              },
             ),
-          ),
-          onTap: () {
-            // Currency view placeholder
-          },
-        ),
-        const SizedBox(width: 12),
-      ],
+            const SizedBox(width: 10),
+            _buildActionButton(
+              context: context,
+              child: Icon(
+                isDark ? Icons.wb_sunny_outlined : Icons.nightlight_round,
+                color: iconColor,
+                size: 20,
+              ),
+              onTap: () => themeProv.toggleTheme(),
+            ),
+          ],
+        );
+      },
     );
   }
 
-  Widget _buildActionButton({required Widget child, required VoidCallback onTap}) {
+  Widget _buildActionButton({required BuildContext context, required Widget child, required VoidCallback onTap}) {
+    final theme = Theme.of(context);
     return Container(
-      width: 38,
-      height: 38,
+      width: 44,
+      height: 44,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         shape: BoxShape.circle,
-        border: Border.all(color: Colors.grey.shade200, width: 1),
+        border: Border.all(color: theme.dividerColor, width: 1),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+            color: theme.colorScheme.onSurface.withOpacity(0.08),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
           ),
         ],
       ),

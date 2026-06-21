@@ -1,9 +1,11 @@
 const Order = require('../models/Order');
 const CartItem = require('../models/CartItem');
+const Notification = require('../models/Notification');
+const Client = require('../models/Client');
 
 exports.createOrder = async (req, res) => {
   try {
-    const { sessionId, customerName, phone, address, branch, paymentMethod, notes, clientId } = req.body;
+    const { sessionId, customerName, phone, address, branch, paymentMethod, notes, clientId, discount, couponCode } = req.body;
 
     if (!sessionId || !customerName || !phone || !address || !branch) {
       return res.status(400).json({
@@ -22,22 +24,30 @@ exports.createOrder = async (req, res) => {
 
     let subtotal = 0;
     const items = cartItems.map((item) => {
+      const menuItem = item.menuItemId;
+      const isActiveOffer = menuItem.hasOffer && (!menuItem.offerExpiresAt || new Date() < new Date(menuItem.offerExpiresAt));
+      const effectivePrice = isActiveOffer ? menuItem.offerPrice : menuItem.price;
+
       const extrasCost = item.selectedExtras.reduce((sum, extra) => sum + extra.price, 0);
-      const itemPrice = item.menuItemId.price + extrasCost;
+      const itemPrice = effectivePrice + extrasCost;
       const totalItemCost = itemPrice * item.quantity;
       subtotal += totalItemCost;
 
       return {
-        menuItemId: item.menuItemId._id,
-        name: item.menuItemId.name,
+        menuItemId: menuItem._id,
+        name: menuItem.name,
         quantity: item.quantity,
-        price: item.menuItemId.price,
+        price: effectivePrice, // For backward compatibility
+        originalPrice: menuItem.price,
+        finalPrice: effectivePrice,
+        offerApplied: isActiveOffer,
         selectedExtras: item.selectedExtras,
       };
     });
 
     const deliveryFee = Number(branch.deliveryFee) || 0;
-    const totalAmount = subtotal + deliveryFee;
+    const appliedDiscount = Number(discount) || 0;
+    const totalAmount = Math.max(0, subtotal + deliveryFee - appliedDiscount);
 
     const order = await Order.create({
       clientId: clientId || null,
@@ -54,6 +64,8 @@ exports.createOrder = async (req, res) => {
       items,
       subtotal,
       deliveryFee,
+      discount: appliedDiscount,
+      couponCode: couponCode || '',
       totalAmount,
       status: 'pending',
       paymentMethod: paymentMethod || 'cash',
@@ -62,6 +74,15 @@ exports.createOrder = async (req, res) => {
 
     // Clear cart for the session
     await CartItem.deleteMany({ sessionId });
+
+    // Update Client Loyalty Points (1 point per 1 DH spent on total amount)
+    if (clientId) {
+      const client = await Client.findById(clientId);
+      if (client) {
+        client.loyaltyPoints = (client.loyaltyPoints || 0) + Math.round(totalAmount);
+        await client.save();
+      }
+    }
 
     res.status(201).json({
       success: true,
@@ -135,8 +156,24 @@ exports.updateOrderStatus = async (req, res) => {
       });
     }
 
-    // Hook for client notifications on status change (to be implemented later)
-    // Example: notifyClientOfStatusChange(order);
+    const statusLabels = {
+      pending: 'Pending',
+      preparing: 'Preparing',
+      delivering: 'Delivering',
+      delivered: 'Delivered',
+    };
+
+    const notifyStatuses = ['preparing', 'delivering', 'delivered'];
+    if (order.clientId && notifyStatuses.includes(status.toLowerCase())) {
+      const shortId = order._id.toString().slice(-6).toUpperCase();
+      await Notification.create({
+        clientId: order.clientId,
+        orderId: order._id,
+        title: `Order #${shortId} status updated`,
+        message: `Your order #${shortId} is now ${statusLabels[status] ?? status}.`,
+        isRead: false,
+      });
+    }
 
     res.status(200).json({
       success: true,

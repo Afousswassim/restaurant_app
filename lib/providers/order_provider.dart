@@ -23,6 +23,8 @@ class OrderProvider with ChangeNotifier {
     String? paymentMethod,
     String? notes,
     String? clientId,
+    double? discount,
+    String? couponCode,
   }) async {
     _isLoading = true;
     _error = null;
@@ -39,6 +41,8 @@ class OrderProvider with ChangeNotifier {
         paymentMethod: paymentMethod,
         notes: notes,
         clientId: clientId,
+        discount: discount,
+        couponCode: couponCode,
       );
       _currentOrder = order;
       _error = null;

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/admin_provider.dart';
 import '../utils/helpers.dart';
-import '../widgets/bottom_nav_bar.dart';
 
 class AdminLoginScreen extends StatefulWidget {
   static const routeName = '/admin-login';
@@ -248,7 +247,6 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
           ),
         ),
       ),
-      bottomNavigationBar: const BottomNavBar(currentIndex: 4),
     );
   }
 }

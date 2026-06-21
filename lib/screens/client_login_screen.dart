@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/client_provider.dart';
 import '../widgets/top_actions.dart';
+import '../widgets/app_drawer.dart';
 import '../widgets/bottom_nav_bar.dart';
 import '../utils/helpers.dart';
 import 'client_register_screen.dart';
@@ -60,6 +61,7 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
 
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
+      endDrawer: const AppDrawer(),
       appBar: AppBar(
         title: const Text(
           'Client Login',

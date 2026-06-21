@@ -5,7 +5,10 @@ class OrderItem {
   final String menuItemId;
   final String name;
   final int quantity;
-  final double price;
+  final double price; // Note: this is finalPrice for backward compatibility
+  final double originalPrice;
+  final double finalPrice;
+  final bool offerApplied;
   final List<ExtraOption> selectedExtras;
 
   OrderItem({
@@ -13,6 +16,9 @@ class OrderItem {
     required this.name,
     required this.quantity,
     required this.price,
+    this.originalPrice = 0.0,
+    this.finalPrice = 0.0,
+    this.offerApplied = false,
     required this.selectedExtras,
   });
 
@@ -27,6 +33,9 @@ class OrderItem {
       name: json['name'] ?? '',
       quantity: json['quantity'] ?? 0,
       price: (json['price'] ?? 0).toDouble(),
+      originalPrice: (json['originalPrice'] ?? json['price'] ?? 0).toDouble(),
+      finalPrice: (json['finalPrice'] ?? json['price'] ?? 0).toDouble(),
+      offerApplied: json['offerApplied'] ?? false,
       selectedExtras: parsedExtras,
     );
   }
@@ -36,6 +45,9 @@ class OrderItem {
     'name': name,
     'quantity': quantity,
     'price': price,
+    'originalPrice': originalPrice,
+    'finalPrice': finalPrice,
+    'offerApplied': offerApplied,
     'selectedExtras': selectedExtras.map((e) => e.toJson()).toList(),
   };
 

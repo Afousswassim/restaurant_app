@@ -18,6 +18,16 @@ const orderItemSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
+  originalPrice: {
+    type: Number,
+  },
+  finalPrice: {
+    type: Number,
+  },
+  offerApplied: {
+    type: Boolean,
+    default: false,
+  },
   selectedExtras: [
     {
       name: String,
@@ -78,9 +88,16 @@ const orderSchema = new mongoose.Schema(
       ref: 'Client',
       default: null,
     },
+    discount: {
+      type: Number,
+      default: 0,
+    },
+    couponCode: {
+      type: String,
+      default: '',
+    },
   },
   { timestamps: true }
 );
 
 module.exports = mongoose.model('Order', orderSchema, 'orders');
-

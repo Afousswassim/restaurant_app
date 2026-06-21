@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:qr_flutter/qr_flutter.dart';
-import '../config/app_config.dart';
-import '../providers/branch_provider.dart';
+import '../providers/client_provider.dart';
 import '../providers/admin_provider.dart';
 import '../models/order.dart';
 import '../utils/helpers.dart';
-import '../widgets/bottom_nav_bar.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   static const routeName = '/admin-dashboard';
@@ -23,45 +20,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<AdminProvider>().fetchOrders();
-      context.read<BranchProvider>().loadBranches();
     });
-  }
-
-  void _showQrDialog(BuildContext context, dynamic branch) {
-    // Use AppConfig.webAppBaseUrl so QR codes point to the PC LAN IP
-    // (do NOT use localhost here when scanning with a mobile device).
-    final id = branch.id;
-    final url = '${AppConfig.webAppBaseUrl}/#/menu?branchId=$id';
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('QR for ${branch.name}'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SizedBox(
-              width: 200,
-              height: 200,
-              child: CustomPaint(
-                painter: QrPainter(
-                  data: url,
-                  version: QrVersions.auto,
-                  gapless: true,
-                  color: Colors.black,
-                  emptyColor: Colors.white,
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            SelectableText(url, style: const TextStyle(fontSize: 12)),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Close')),
-        ],
-      ),
-    );
   }
 
   @override
@@ -103,26 +62,39 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             icon: const Icon(Icons.logout),
             tooltip: 'Sign Out',
             onPressed: () async {
-              final confirm = await showDialog<bool>(
+              final result = await showDialog<int>(
                 context: context,
                 builder: (context) => AlertDialog(
                   title: const Text('Sign Out?'),
-                  content: const Text('Are you sure you want to log out of the admin panel?'),
+                  content: const Text('Choose sign out option:'),
                   actions: [
                     TextButton(
-                      onPressed: () => Navigator.pop(context, false),
+                      onPressed: () => Navigator.pop(context, 0),
                       child: const Text('Cancel'),
                     ),
                     TextButton(
-                      onPressed: () => Navigator.pop(context, true),
-                      style: TextButton.styleFrom(foregroundColor: Colors.red),
+                      onPressed: () => Navigator.pop(context, 1),
                       child: const Text('Sign Out'),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, 2),
+                      style: TextButton.styleFrom(foregroundColor: Colors.red),
+                      child: const Text('Sign Out (All Sessions)'),
                     ),
                   ],
                 ),
               );
-              if (confirm == true) {
+
+              if (result == 1) {
                 await adminProvider.logout();
+                if (mounted) Navigator.of(context).pushReplacementNamed('/admin-login');
+              } else if (result == 2) {
+                await adminProvider.logout(clearAll: true);
+                // clear in-memory client provider as well
+                try {
+                  await context.read<ClientProvider>().logout();
+                } catch (_) {}
+                if (mounted) Navigator.of(context).pushReplacementNamed('/admin-login');
               }
             },
           ),
@@ -234,85 +206,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                         ),
                       ),
 
-                      // QR Menu Section
-                      const SliverToBoxAdapter(
-                        child: Padding(
-                          padding: EdgeInsets.only(left: 20, right: 20, top: 8, bottom: 12),
-                          child: Text(
-                            'QR Menu',
-                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
-                          ),
-                        ),
-                      ),
-
-                      SliverPadding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        sliver: SliverToBoxAdapter(
-                          child: Consumer<BranchProvider>(
-                            builder: (context, branchProvider, _) {
-                              if (branchProvider.isLoading) {
-                                return const SizedBox(height: 120, child: Center(child: CircularProgressIndicator()));
-                              }
-                              if (branchProvider.error != null) {
-                                return Padding(
-                                  padding: const EdgeInsets.all(12.0),
-                                  child: Text('Failed loading branches: ${branchProvider.error}'),
-                                );
-                              }
-                              final branches = branchProvider.branches;
-                              if (branches.isEmpty) {
-                                return const Padding(
-                                  padding: EdgeInsets.all(12.0),
-                                  child: Text('No branches available'),
-                                );
-                              }
-
-                              return Wrap(
-                                spacing: 12,
-                                runSpacing: 12,
-                                children: branches.map((b) {
-                                  return SizedBox(
-                                    width: ResponsiveUtil.isMobile(MediaQuery.of(context).size.width) ? double.infinity : 320,
-                                    child: Card(
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                      child: Padding(
-                                        padding: const EdgeInsets.all(12.0),
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(b.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                                            const SizedBox(height: 6),
-                                            Text(b.address, style: TextStyle(color: Colors.grey.shade700)),
-                                            const SizedBox(height: 8),
-                                            Row(
-                                              children: [
-                                                Chip(label: Text('Fee: ${CurrencyFormatter.formatDH(b.deliveryFee)}')),
-                                                const SizedBox(width: 8),
-                                                Chip(label: Text('Time: ${b.deliveryTime}')),
-                                              ],
-                                            ),
-                                            const SizedBox(height: 12),
-                                            Align(
-                                              alignment: Alignment.centerRight,
-                                              child: ElevatedButton.icon(
-                                                onPressed: () => _showQrDialog(context, b),
-                                                icon: const Icon(Icons.qr_code),
-                                                label: const Text('Show QR Code'),
-                                                style: ElevatedButton.styleFrom(backgroundColor: Colors.deepOrange),
-                                              ),
-                                            )
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                }).toList(),
-                              );
-                            },
-                          ),
-                        ),
-                      ),
-
                       // List
                       if (adminProvider.orders.isEmpty)
                         const SliverFillRemaining(
@@ -355,7 +248,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 ),
               ),
             ),
-      bottomNavigationBar: const BottomNavBar(currentIndex: 4),
     );
   }
 

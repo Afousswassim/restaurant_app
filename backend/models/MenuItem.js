@@ -21,6 +21,22 @@ const menuItemSchema = new mongoose.Schema(
       required: true,
       min: 0,
     },
+    hasOffer: {
+      type: Boolean,
+      default: false,
+    },
+    oldPrice: {
+      type: Number,
+    },
+    offerPrice: {
+      type: Number,
+    },
+    offerExpiresAt: {
+      type: Date,
+    },
+    offerLabel: {
+      type: String,
+    },
     imageUrl: {
       type: String,
       required: true,
@@ -56,4 +72,3 @@ const menuItemSchema = new mongoose.Schema(
 );
 
 module.exports = mongoose.model('MenuItem', menuItemSchema, 'menu_items');
-

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/order.dart';
@@ -26,10 +27,9 @@ class AdminProvider with ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       if (prefs.containsKey('admin_token')) {
         _token = prefs.getString('admin_token');
-        final email = prefs.getString('admin_email');
-        final name = prefs.getString('admin_name');
-        if (email != null && name != null) {
-          _adminInfo = {'email': email, 'name': name};
+        final adminJson = prefs.getString('admin_data');
+        if (adminJson != null && adminJson.isNotEmpty) {
+          _adminInfo = Map<String, dynamic>.from(jsonDecode(adminJson));
         }
         notifyListeners();
       }
@@ -50,8 +50,7 @@ class AdminProvider with ChangeNotifier {
       
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('admin_token', _token!);
-      await prefs.setString('admin_email', _adminInfo!['email'] ?? '');
-      await prefs.setString('admin_name', _adminInfo!['name'] ?? '');
+      await prefs.setString('admin_data', jsonEncode(_adminInfo!));
       
       _error = null;
       _isLoading = false;
@@ -65,15 +64,18 @@ class AdminProvider with ChangeNotifier {
     }
   }
 
-  Future<void> logout() async {
+  Future<void> logout({bool clearAll = false}) async {
     _token = null;
     _adminInfo = null;
     _orders = [];
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove('admin_token');
-      await prefs.remove('admin_email');
-      await prefs.remove('admin_name');
+      await prefs.remove('admin_data');
+      if (clearAll) {
+        await prefs.remove('client_token');
+        await prefs.remove('client_data');
+      }
     } catch (_) {}
     notifyListeners();
   }

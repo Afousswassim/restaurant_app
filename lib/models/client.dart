@@ -5,6 +5,7 @@ class Client {
   final String email;
   final String address;
   final String landmark;
+  final int loyaltyPoints;
 
   Client({
     required this.id,
@@ -13,6 +14,7 @@ class Client {
     required this.email,
     required this.address,
     required this.landmark,
+    this.loyaltyPoints = 0,
   });
 
   factory Client.fromJson(Map<String, dynamic> json) {
@@ -23,6 +25,7 @@ class Client {
       email: json['email'] ?? '',
       address: json['address'] ?? '',
       landmark: json['landmark'] ?? '',
+      loyaltyPoints: json['loyaltyPoints'] ?? 0,
     );
   }
 
@@ -33,5 +36,6 @@ class Client {
     'email': email,
     'address': address,
     'landmark': landmark,
+    'loyaltyPoints': loyaltyPoints,
   };
 }
