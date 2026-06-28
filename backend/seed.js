@@ -7,6 +7,55 @@ const Order = require('./models/Order');
 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/food-delivery';
 
+const nutritionByCategory = {
+  Burger: { calories: 620, protein: 32, carbs: 48, fat: 34, tags: ['high-protein', 'family'] },
+  Pizza: { calories: 760, protein: 30, carbs: 86, fat: 31, tags: ['family'] },
+  Crepe: { calories: 430, protein: 16, carbs: 54, fat: 18, tags: ['budget'] },
+  Dessert: { calories: 480, protein: 8, carbs: 64, fat: 22, tags: ['family'] },
+  Drinks: { calories: 120, protein: 2, carbs: 26, fat: 1, tags: ['budget', 'low-calorie'] },
+};
+
+const buildNutrition = (item) => {
+  const base = nutritionByCategory[item.category] || { calories: 450, protein: 15, carbs: 50, fat: 15, tags: [] };
+  const name = item.name.toLowerCase();
+  const tags = new Set(base.tags);
+  let nutrition = { ...base };
+
+  if (name.includes('veggie') || name.includes('orange') || name.includes('water') || name.includes('funghi')) {
+    tags.add('healthy');
+    tags.add('low-calorie');
+    nutrition = {
+      ...nutrition,
+      calories: Math.max(60, nutrition.calories - 180),
+      fat: Math.max(0, nutrition.fat - 8),
+    };
+  }
+
+  if (name.includes('chicken') || name.includes('double') || name.includes('crispy')) {
+    tags.add('high-protein');
+    nutrition = {
+      ...nutrition,
+      protein: nutrition.protein + 12,
+    };
+  }
+
+  if (item.price <= 45 || name.includes('classic') || name.includes('water')) {
+    tags.add('budget');
+  }
+
+  if (name.includes('family') || name.includes('combo') || item.price >= 120) {
+    tags.add('family');
+  }
+
+  return {
+    calories: nutrition.calories,
+    protein: nutrition.protein,
+    carbs: nutrition.carbs,
+    fat: nutrition.fat,
+    tags: Array.from(tags),
+  };
+};
+
 const seedDatabase = async () => {
   try {
     await mongoose.connect(MONGODB_URI, {
@@ -320,6 +369,7 @@ const seedDatabase = async () => {
       menuItemsData.forEach((item) => {
         itemsToCreate.push({
           ...item,
+          ...buildNutrition(item),
           branchId: branch._id,
         });
       });

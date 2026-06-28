@@ -37,6 +37,10 @@ const menuItemSchema = new mongoose.Schema(
     offerLabel: {
       type: String,
     },
+    isOfferActive: {
+      type: Boolean,
+      default: false,
+    },
     imageUrl: {
       type: String,
       required: true,
@@ -44,6 +48,30 @@ const menuItemSchema = new mongoose.Schema(
     category: {
       type: String,
       required: true,
+    },
+    calories: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    protein: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    carbs: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    fat: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    tags: {
+      type: [String],
+      default: [],
     },
     extras: [
       {

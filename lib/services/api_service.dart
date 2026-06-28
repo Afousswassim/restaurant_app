@@ -5,6 +5,7 @@ import '../models/menu_item.dart';
 import '../models/cart_item.dart';
 import '../models/order.dart';
 import '../models/notification.dart';
+import '../models/ai_recommendation.dart';
 import '../config/app_config.dart';
 
 class ApiService {
@@ -236,7 +237,7 @@ class ApiService {
     return Order.fromJson(data as Map<String, dynamic>);
   }
 
-  // Coupon & Loyalty endpoints
+  // Coupon endpoints
   static Future<Map<String, dynamic>> validateCoupon(String code, double subtotal) async {
     final data = await _makeRequest(
       'POST',
@@ -250,14 +251,18 @@ class ApiService {
   }
 
   static Future<Map<String, dynamic>> redeemReward(String clientId, String rewardType) async {
+    print('[API] Redeem request - clientId: $clientId, rewardType: $rewardType');
+    
     final data = await _makeRequest(
       'POST',
-      '/coupons/redeem',
+      '/loyalty/redeem',
       body: {
         'clientId': clientId,
         'rewardType': rewardType,
       },
     );
+    
+    print('[API] Redeem response: $data');
     return data as Map<String, dynamic>;
   }
 
@@ -434,5 +439,30 @@ class ApiService {
       body: {'status': status},
     );
     return Order.fromJson(data as Map<String, dynamic>);
+  }
+
+  static Future<AiRecommendation> generateAiFoodPlan({
+    required String mode,
+    String? clientId,
+    String? branchId,
+    String? goal,
+    double? budget,
+    int? people,
+    String? preference,
+  }) async {
+    final data = await _makeRequest(
+      'POST',
+      '/ai/food-assistant',
+      body: {
+        'mode': mode,
+        if (clientId != null && clientId.isNotEmpty) 'clientId': clientId,
+        if (branchId != null && branchId.isNotEmpty) 'branchId': branchId,
+        if (goal != null) 'goal': goal,
+        if (budget != null) 'budget': budget,
+        if (people != null) 'people': people,
+        if (preference != null) 'preference': preference,
+      },
+    );
+    return AiRecommendation.fromJson(data as Map<String, dynamic>);
   }
 }

@@ -15,6 +15,6 @@ class AppConfig {
   // Change this when Flutter Web IP or port changes
   // This is used to build QR links. Do NOT use 'localhost' here when
   // you plan to scan the QR from a mobile device — use your PC LAN IP.
-  static const String webAppBaseUrl = 'http://192.168.1.33:64146';
+  static const String webAppBaseUrl = 'http://localhost:64146';
   
 }

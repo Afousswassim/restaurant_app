@@ -29,7 +29,7 @@ class OrderItem {
         : [];
 
     return OrderItem(
-      menuItemId: json['menuItemId'] ?? '',
+      menuItemId: json['menuItemId']?.toString() ?? '',
       name: json['name'] ?? '',
       quantity: json['quantity'] ?? 0,
       price: (json['price'] ?? 0).toDouble(),
@@ -74,6 +74,9 @@ class Order {
   final String notes;
   final String? clientId;
   final DateTime createdAt;
+  final String orderType;
+  final int pointsUsed;
+  final String rewardName;
 
   Order({
     required this.id,
@@ -90,6 +93,9 @@ class Order {
     required this.notes,
     required this.createdAt,
     this.clientId,
+    this.orderType = 'order',
+    this.pointsUsed = 0,
+    this.rewardName = '',
   });
 
   factory Order.fromJson(Map<String, dynamic> json) {
@@ -113,6 +119,9 @@ class Order {
       notes: json['notes'] ?? '',
       createdAt: DateTime.tryParse(json['createdAt'] ?? '') ?? DateTime.now(),
       clientId: json['clientId'],
+      orderType: json['orderType'] ?? 'order',
+      pointsUsed: (json['pointsUsed'] ?? 0).toInt(),
+      rewardName: json['rewardName'] ?? '',
     );
   }
 
@@ -131,9 +140,18 @@ class Order {
     'notes': notes,
     'createdAt': createdAt.toIso8601String(),
     'clientId': clientId,
+    'orderType': orderType,
+    'pointsUsed': pointsUsed,
+    'rewardName': rewardName,
   };
 
+  bool get isReward => orderType == 'reward';
+
   String get statusDisplay {
+    if (status == 'reward_redeemed') {
+      return 'Reward redeemed';
+    }
+
     switch (status) {
       case 'confirmed':
         return 'Order Confirmed';

@@ -188,6 +188,9 @@ class _OrdersScreenState extends State<OrdersScreen> {
     final textTheme = theme.textTheme;
     Color statusColor;
     switch (order.status) {
+      case 'reward_redeemed':
+        statusColor = const Color(0xFFFFB300);
+        break;
       case 'pending':
         statusColor = colorScheme.secondary;
         break;
@@ -223,13 +226,39 @@ class _OrdersScreenState extends State<OrdersScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'ORDER ID: #$idTruncated',
-                  style: textTheme.bodyLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                    letterSpacing: 0.5,
-                    color: colorScheme.onSurface,
+                Expanded(
+                  child: Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          '${order.isReward ? 'REWARD' : 'ORDER'} ID: #$idTruncated',
+                          style: textTheme.bodyLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                            letterSpacing: 0.5,
+                            color: colorScheme.onSurface,
+                          ),
+                        ),
+                      ),
+                      if (order.isReward) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFB300).withOpacity(0.16),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            'Reward',
+                            style: textTheme.bodySmall?.copyWith(
+                              color: const Color(0xFF8A5A00),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
                 Container(
@@ -265,7 +294,11 @@ class _OrdersScreenState extends State<OrdersScreen> {
             Divider(height: 24, color: theme.dividerColor),
             Row(
               children: [
-                Icon(Icons.storefront, size: 14, color: colorScheme.primary),
+                Icon(
+                  order.isReward ? Icons.card_giftcard : Icons.storefront,
+                  size: 14,
+                  color: colorScheme.primary,
+                ),
                 const SizedBox(width: 6),
                 Text(
                   order.branch.name,
@@ -278,10 +311,16 @@ class _OrdersScreenState extends State<OrdersScreen> {
               ],
             ),
             const SizedBox(height: 8),
-            Text(
-              'Address: ${order.address}',
-              style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
-            ),
+            if (!order.isReward)
+              Text(
+                'Address: ${order.address}',
+                style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+              ),
+            if (order.isReward)
+              Text(
+                'Points used: ${order.pointsUsed} pts',
+                style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+              ),
             Divider(height: 24, color: theme.dividerColor),
             ...order.items.map((item) => Padding(
                   padding: const EdgeInsets.symmetric(vertical: 2),
@@ -320,7 +359,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Total Amount:',
+                  order.isReward ? 'Price:' : 'Total Amount:',
                   style: textTheme.bodyLarge?.copyWith(
                     fontWeight: FontWeight.bold,
                     fontSize: 13,

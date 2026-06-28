@@ -76,6 +76,12 @@ class AppDrawer extends StatelessWidget {
                           onTap: () => _navigateNamed(context, '/orders'),
                         ),
                         _DrawerItem(
+                          icon: Icons.smart_toy_outlined,
+                          label: 'AI Food Assistant',
+                          isActive: currentRoute == '/ai-food-assistant',
+                          onTap: () => _navigateNamed(context, '/ai-food-assistant'),
+                        ),
+                        _DrawerItem(
                           icon: Icons.card_giftcard_outlined,
                           label: 'Special Offers & Deals',
                           isActive: currentRoute == '/offers',
@@ -113,12 +119,6 @@ class AppDrawer extends StatelessWidget {
                           label: 'Change Branch',
                           isActive: currentRoute == '/branch-selection',
                           onTap: () => _navigateNamed(context, '/branch-selection'),
-                        ),
-                        _DrawerItem(
-                          icon: Icons.settings_outlined,
-                          label: 'Settings',
-                          isActive: currentRoute == '/settings',
-                          onTap: () => _navigateNamed(context, '/settings'),
                         ),
                         const Spacer(),
                         const SizedBox(height: 24),

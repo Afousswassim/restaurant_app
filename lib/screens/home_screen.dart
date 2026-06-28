@@ -93,38 +93,77 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       endDrawer: const AppDrawer(),
       appBar: AppBar(
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.location_on, color: Colors.white),
-            const SizedBox(width: 8),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Delivering from',
-                  style: TextStyle(fontSize: 10, color: Colors.white70),
-                ),
-                Text(
-                  selectedBranch.name,
-                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
-                ),
-              ],
-            ),
-          ],
+        toolbarHeight: 68,
+        titleSpacing: 0,
+        title: LayoutBuilder(
+          builder: (context, constraints) {
+            final isCompact = constraints.maxWidth < 360;
+            return Padding(
+              padding: const EdgeInsets.only(left: 16, right: 8),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  const Icon(Icons.location_on, color: Colors.white, size: 18),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Delivering from',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: isCompact ? 10 : 11,
+                            color: Colors.white70,
+                            height: 1.1,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          selectedBranch.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: isCompact ? 13 : 14,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
         ),
         actions: [
-          TextButton.icon(
-            onPressed: () {
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (_) => const BranchSelectionScreen()),
-              );
-            },
-            icon: const Icon(Icons.swap_horiz, color: Colors.white),
-            label: const Text('Change', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: TextButton.icon(
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                minimumSize: const Size(0, 0),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              onPressed: () {
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(builder: (_) => const BranchSelectionScreen()),
+                );
+              },
+              icon: const Icon(Icons.swap_horiz, color: Colors.white, size: 18),
+              label: const Text('Change', style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
           ),
-          const SizedBox(width: 6),
-          const TopActions(),
+          const SizedBox(width: 8),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 8),
+            child: TopActions(),
+          ),
+          const SizedBox(width: 10),
         ],
         backgroundColor: Colors.deepOrange,
         elevation: 0,

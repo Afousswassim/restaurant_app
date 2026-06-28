@@ -12,6 +12,8 @@ const notificationRoutes = require('./routes/notifications');
 const adminRoutes = require('./routes/adminRoutes');
 const clientRoutes = require('./routes/clients');
 const couponRoutes = require('./routes/coupons');
+const loyaltyRoutes = require('./routes/loyalty');
+const aiRoutes = require('./routes/aiRoutes');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
@@ -31,6 +33,8 @@ app.use('/notifications', notificationRoutes);
 app.use('/admin', adminRoutes);
 app.use('/clients', clientRoutes);
 app.use('/coupons', couponRoutes);
+app.use('/loyalty', loyaltyRoutes);
+app.use('/ai', aiRoutes);
 
 app.get('/health', (req, res) => {
   res.status(200).json({

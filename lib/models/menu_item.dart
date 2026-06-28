@@ -47,6 +47,11 @@ class MenuItem {
   final List<ExtraOption> extras;
   final bool isAvailable;
   final double rating;
+  final int calories;
+  final int protein;
+  final int carbs;
+  final int fat;
+  final List<String> tags;
 
   MenuItem({
     required this.id,
@@ -64,6 +69,11 @@ class MenuItem {
     required this.extras,
     this.isAvailable = true,
     this.rating = 4.8,
+    this.calories = 0,
+    this.protein = 0,
+    this.carbs = 0,
+    this.fat = 0,
+    this.tags = const [],
   });
 
   factory MenuItem.fromJson(Map<String, dynamic> json) {
@@ -88,6 +98,11 @@ class MenuItem {
       extras: parsedExtras,
       isAvailable: json['isAvailable'] ?? true,
       rating: (json['rating'] ?? 4.8).toDouble(),
+      calories: (json['calories'] ?? 0).toInt(),
+      protein: (json['protein'] ?? 0).toInt(),
+      carbs: (json['carbs'] ?? 0).toInt(),
+      fat: (json['fat'] ?? 0).toInt(),
+      tags: (json['tags'] as List<dynamic>?)?.map((tag) => tag.toString()).toList() ?? [],
     );
   }
 
@@ -107,6 +122,11 @@ class MenuItem {
     'extras': extras.map((e) => e.toJson()).toList(),
     'isAvailable': isAvailable,
     'rating': rating,
+    'calories': calories,
+    'protein': protein,
+    'carbs': carbs,
+    'fat': fat,
+    'tags': tags,
   };
 
   double get effectivePrice {

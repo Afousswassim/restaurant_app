@@ -160,28 +160,43 @@ class ClientProvider with ChangeNotifier {
   }
 
   Future<Map<String, dynamic>?> redeemReward(String rewardType) async {
-    if (_currentClient == null) return null;
+    if (_currentClient == null) {
+      print('[REDEEM] ERROR: No current client');
+      return null;
+    }
+    
+    print('[REDEEM] Starting redeem - clientId: ${_currentClient!.id}, rewardType: $rewardType, currentPoints: ${_currentClient!.loyaltyPoints}');
+    
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
+      print('[REDEEM] Sending request with clientId: ${_currentClient!.id}');
+      
       final res = await ApiService.redeemReward(_currentClient!.id, rewardType);
+      
+      print('[REDEEM] Response received: ${res.toString()}');
       
       // Update client from response
       final updatedClientData = res['client'] as Map<String, dynamic>;
       _currentClient = Client.fromJson(updatedClientData);
+      
+      print('[REDEEM] Client updated - new points: ${_currentClient!.loyaltyPoints}');
 
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('client_data', jsonEncode(_currentClient!.toJson()));
 
       _isLoading = false;
       notifyListeners();
+      final reward = res['reward'] as Map<String, dynamic>;
       return {
-        'couponCode': res['coupon']['code'],
-        'rewardValue': res['coupon']['value'],
+        'rewardName': reward['name'],
+        'rewardValue': reward['value'],
+        'pointsRequired': reward['pointsRequired'],
       };
     } catch (e) {
+      print('[REDEEM] ERROR: ${e.toString()}');
       _error = e.toString().replaceAll('Exception: ', '');
       _isLoading = false;
       notifyListeners();

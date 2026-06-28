@@ -27,10 +27,10 @@ class TopActions extends StatelessWidget {
                 children: [
                   _buildActionButton(
                     context: context,
-                    child: Icon(Icons.menu, color: iconColor, size: 20),
+                    child: Icon(Icons.menu, color: iconColor, size: 18),
                     onTap: scaffoldState?.openEndDrawer ?? () {},
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: 8),
                 ],
               ),
             _buildActionButton(
@@ -41,7 +41,7 @@ class TopActions extends StatelessWidget {
                   Icon(
                     Icons.notifications_none,
                     color: iconColor,
-                    size: 20,
+                    size: 18,
                   ),
                   if (badgeCount > 0)
                     Positioned(
@@ -66,13 +66,13 @@ class TopActions extends StatelessWidget {
                 Navigator.of(context).pushNamed(NotificationScreen.routeName);
               },
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 8),
             _buildActionButton(
               context: context,
               child: Icon(
                 isDark ? Icons.wb_sunny_outlined : Icons.nightlight_round,
                 color: iconColor,
-                size: 20,
+                size: 18,
               ),
               onTap: () => themeProv.toggleTheme(),
             ),
@@ -84,13 +84,17 @@ class TopActions extends StatelessWidget {
 
   Widget _buildActionButton({required BuildContext context, required Widget child, required VoidCallback onTap}) {
     final theme = Theme.of(context);
+    final backgroundColor = theme.brightness == Brightness.dark
+        ? theme.colorScheme.surfaceVariant
+        : Colors.white;
+
     return Container(
-      width: 44,
-      height: 44,
+      width: 42,
+      height: 42,
       decoration: BoxDecoration(
-        color: theme.cardColor,
+        color: backgroundColor,
         shape: BoxShape.circle,
-        border: Border.all(color: theme.dividerColor, width: 1),
+        border: Border.all(color: theme.dividerColor.withOpacity(0.7), width: 1),
         boxShadow: [
           BoxShadow(
             color: theme.colorScheme.onSurface.withOpacity(0.08),

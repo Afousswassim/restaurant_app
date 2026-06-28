@@ -193,7 +193,7 @@ class OffersScreen extends StatelessWidget {
                                   if (res != null && context.mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
-                                        content: Text('Redeemed! Coupon: ${res['couponCode']}'),
+                                        content: Text('Redeemed! ${res['rewardName']}'),
                                         backgroundColor: Colors.green,
                                         duration: const Duration(seconds: 4),
                                       ),
@@ -386,5 +386,4 @@ class _CountdownTickerState extends State<_CountdownTicker> {
     );
   }
 }
-
 

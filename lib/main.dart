@@ -9,12 +9,12 @@ import 'providers/client_provider.dart';
 import 'providers/notification_provider.dart';
 import 'providers/theme_provider.dart';
 import 'providers/offers_provider.dart';
+import 'providers/ai_provider.dart';
 import 'screens/splash_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/branch_selection_screen.dart';
 import 'screens/offers_screen.dart';
 import 'screens/favorites_screen.dart';
-import 'screens/settings_screen.dart';
 import 'screens/cart_screen.dart';
 import 'screens/admin_login_screen.dart';
 import 'screens/admin_dashboard_screen.dart';
@@ -24,6 +24,7 @@ import 'screens/client_profile_screen.dart';
 import 'screens/notification_screen.dart';
 import 'screens/orders_screen.dart';
 import 'screens/menu_screen.dart';
+import 'screens/ai_food_assistant_screen.dart';
 import 'utils/helpers.dart';
 
 void main() async {
@@ -57,6 +58,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => ClientProvider()),
         ChangeNotifierProvider(create: (_) => NotificationProvider()),
         ChangeNotifierProvider(create: (_) => OffersProvider()),
+        ChangeNotifierProvider(create: (_) => AiProvider()),
         ChangeNotifierProvider.value(value: themeProvider),
       ],
       child: Consumer<ThemeProvider>(
@@ -92,7 +94,6 @@ class MyApp extends StatelessWidget {
               BranchSelectionScreen.routeName: (ctx) => const BranchSelectionScreen(),
               OffersScreen.routeName: (ctx) => const OffersScreen(),
               FavoritesScreen.routeName: (ctx) => const FavoritesScreen(),
-              SettingsScreen.routeName: (ctx) => const SettingsScreen(),
               CartScreen.routeName: (ctx) => const CartScreen(),
               AdminLoginScreen.routeName: (ctx) => const AdminLoginScreen(),
               AdminDashboardScreen.routeName: (ctx) => const AdminDashboardScreen(),
@@ -102,6 +103,7 @@ class MyApp extends StatelessWidget {
               NotificationScreen.routeName: (ctx) => const NotificationScreen(),
               OrdersScreen.routeName: (ctx) => const OrdersScreen(),
               MenuScreen.routeName: (ctx) => const MenuScreen(),
+              AiFoodAssistantScreen.routeName: (ctx) => const AiFoodAssistantScreen(),
             },
           );
         },

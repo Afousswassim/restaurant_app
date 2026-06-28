@@ -25,7 +25,7 @@ class LoyaltyCard extends StatelessWidget {
       nextReward = "Free Burger";
     }
 
-    final progress = (points / nextMilestone).clamp(0.0, 1.0);
+    final progress = (points / 1000).clamp(0.0, 1.0);
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),

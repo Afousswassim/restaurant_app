@@ -4,7 +4,7 @@ const orderItemSchema = new mongoose.Schema({
   menuItemId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'MenuItem',
-    required: true,
+    default: null,
   },
   name: {
     type: String,
@@ -93,6 +93,19 @@ const orderSchema = new mongoose.Schema(
       default: 0,
     },
     couponCode: {
+      type: String,
+      default: '',
+    },
+    orderType: {
+      type: String,
+      enum: ['order', 'reward'],
+      default: 'order',
+    },
+    pointsUsed: {
+      type: Number,
+      default: 0,
+    },
+    rewardName: {
       type: String,
       default: '',
     },
