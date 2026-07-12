@@ -40,8 +40,12 @@ class MenuItem {
   final bool hasOffer;
   final double? oldPrice;
   final double? offerPrice;
+  final DateTime? offerStartDate;
   final DateTime? offerExpiresAt;
+  final String? offerTitle;
+  final String? offerDescription;
   final String? offerLabel;
+  final bool isOfferActive;
   final String imageUrl;
   final String category;
   final List<ExtraOption> extras;
@@ -62,8 +66,12 @@ class MenuItem {
     this.hasOffer = false,
     this.oldPrice,
     this.offerPrice,
+    this.offerStartDate,
     this.offerExpiresAt,
+    this.offerTitle,
+    this.offerDescription,
     this.offerLabel,
+    this.isOfferActive = false,
     required this.imageUrl,
     required this.category,
     required this.extras,
@@ -91,8 +99,12 @@ class MenuItem {
       hasOffer: json['hasOffer'] ?? false,
       oldPrice: json['oldPrice'] != null ? (json['oldPrice'] as num).toDouble() : null,
       offerPrice: json['offerPrice'] != null ? (json['offerPrice'] as num).toDouble() : null,
+      offerStartDate: json['offerStartDate'] != null ? DateTime.tryParse(json['offerStartDate']) : null,
       offerExpiresAt: json['offerExpiresAt'] != null ? DateTime.tryParse(json['offerExpiresAt']) : null,
+      offerTitle: json['offerTitle'],
+      offerDescription: json['offerDescription'],
       offerLabel: json['offerLabel'],
+      isOfferActive: json['isOfferActive'] ?? false,
       imageUrl: json['imageUrl'] ?? '',
       category: json['category'] ?? '',
       extras: parsedExtras,
@@ -115,8 +127,12 @@ class MenuItem {
     'hasOffer': hasOffer,
     'oldPrice': oldPrice,
     'offerPrice': offerPrice,
+    'offerStartDate': offerStartDate?.toIso8601String(),
     'offerExpiresAt': offerExpiresAt?.toIso8601String(),
+    'offerTitle': offerTitle,
+    'offerDescription': offerDescription,
     'offerLabel': offerLabel,
+    'isOfferActive': isOfferActive,
     'imageUrl': imageUrl,
     'category': category,
     'extras': extras.map((e) => e.toJson()).toList(),
@@ -130,8 +146,12 @@ class MenuItem {
   };
 
   double get effectivePrice {
-    if (hasOffer && offerPrice != null) {
-      if (offerExpiresAt != null && DateTime.now().isAfter(offerExpiresAt!)) {
+    final now = DateTime.now();
+    if (hasOffer && offerPrice != null && isOfferActive) {
+      if (offerStartDate != null && offerStartDate!.isAfter(now)) {
+        return price;
+      }
+      if (offerExpiresAt != null && now.isAfter(offerExpiresAt!)) {
         return price;
       }
       return offerPrice!;

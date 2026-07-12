@@ -25,7 +25,9 @@ class OrderItem {
   factory OrderItem.fromJson(Map<String, dynamic> json) {
     var rawExtras = json['selectedExtras'] as List<dynamic>?;
     List<ExtraOption> parsedExtras = rawExtras != null
-        ? rawExtras.map((e) => ExtraOption.fromJson(e as Map<String, dynamic>)).toList()
+        ? rawExtras
+              .map((e) => ExtraOption.fromJson(e as Map<String, dynamic>))
+              .toList()
         : [];
 
     return OrderItem(
@@ -52,7 +54,10 @@ class OrderItem {
   };
 
   double get unitPrice {
-    double extrasPrice = selectedExtras.fold(0.0, (sum, extra) => sum + extra.price);
+    double extrasPrice = selectedExtras.fold(
+      0.0,
+      (sum, extra) => sum + extra.price,
+    );
     return price + extrasPrice;
   }
 
@@ -77,6 +82,7 @@ class Order {
   final String orderType;
   final int pointsUsed;
   final String rewardName;
+  final double discount;
 
   Order({
     required this.id,
@@ -96,12 +102,15 @@ class Order {
     this.orderType = 'order',
     this.pointsUsed = 0,
     this.rewardName = '',
+    this.discount = 0.0,
   });
 
   factory Order.fromJson(Map<String, dynamic> json) {
     var rawItems = json['items'] as List<dynamic>?;
     List<OrderItem> parsedItems = rawItems != null
-        ? rawItems.map((e) => OrderItem.fromJson(e as Map<String, dynamic>)).toList()
+        ? rawItems
+              .map((e) => OrderItem.fromJson(e as Map<String, dynamic>))
+              .toList()
         : [];
 
     return Order(
@@ -122,6 +131,7 @@ class Order {
       orderType: json['orderType'] ?? 'order',
       pointsUsed: (json['pointsUsed'] ?? 0).toInt(),
       rewardName: json['rewardName'] ?? '',
+      discount: (json['discount'] ?? 0).toDouble(),
     );
   }
 
@@ -143,6 +153,7 @@ class Order {
     'orderType': orderType,
     'pointsUsed': pointsUsed,
     'rewardName': rewardName,
+    'discount': discount,
   };
 
   bool get isReward => orderType == 'reward';

@@ -65,16 +65,8 @@ const seedDatabase = async () => {
 
     console.log('Connected to MongoDB');
 
-    // Clear old data for test
-    await Branch.deleteMany({});
-    await MenuItem.deleteMany({});
-    await CartItem.deleteMany({});
-    await Order.deleteMany({});
-
-    console.log('✅ Old branches, menu_items, cart_items, orders cleared');
-
-    // Insert 3 Casablanca branches with slugs
-    const branches = await Branch.create([
+    // Upsert branches (do not blindly delete existing data to avoid duplicates)
+    const branchDefinitions = [
       {
         name: 'Maarif Branch',
         slug: 'maarif',
@@ -96,9 +88,19 @@ const seedDatabase = async () => {
         deliveryFee: 25,
         deliveryTime: '30-40 min',
       },
-    ]);
+    ];
 
-    console.log('✅ 3 Branches created successfully');
+    const branches = [];
+    for (const b of branchDefinitions) {
+      const result = await Branch.findOneAndUpdate(
+        { slug: b.slug },
+        { $set: b },
+        { upsert: true, new: true }
+      );
+      branches.push(result);
+    }
+
+    console.log('✅ Branches upserted successfully');
     // Define menu items (prices in DH)
     const menuItemsData = [
       // Burgers
@@ -364,20 +366,26 @@ const seedDatabase = async () => {
       },
     ];
 
-    const itemsToCreate = [];
-    branches.forEach((branch) => {
-      menuItemsData.forEach((item) => {
-        itemsToCreate.push({
+    // Upsert menu items by name + branchId to avoid duplicates on repeated seeds
+    for (const branch of branches) {
+      for (const item of menuItemsData) {
+        const doc = {
           ...item,
           ...buildNutrition(item),
           branchId: branch._id,
-        });
-      });
-    });
+          hasOffer: item.hasOffer || false,
+          isOfferActive: item.hasOffer ? true : false,
+        };
 
-    await MenuItem.create(itemsToCreate);
+        await MenuItem.findOneAndUpdate(
+          { name: item.name, branchId: branch._id },
+          { $set: doc },
+          { upsert: true, new: true }
+        );
+      }
+    }
 
-    console.log('✅ Menu items seeded successfully');
+    console.log('✅ Menu items upserted successfully');
 
     await mongoose.connection.close();
     console.log('✅ Database seeding completed successfully');

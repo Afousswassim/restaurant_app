@@ -89,7 +89,8 @@ class AdminStatCard extends StatelessWidget {
                 ),
                 if (trend != null) ...[
                   const SizedBox(height: 6),
-                  Row(
+                  Wrap(
+                    crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
                       Icon(
                         isTrendPositive ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded,

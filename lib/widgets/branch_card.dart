@@ -49,6 +49,8 @@ class BranchCard extends StatelessWidget {
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
                     Text(
@@ -57,30 +59,44 @@ class BranchCard extends StatelessWidget {
                         color: Colors.grey.shade600,
                         fontSize: 13,
                       ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 8),
-                    Row(
+                    Wrap(
+                      spacing: 10,
+                      runSpacing: 6,
+                      crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
-                        Icon(Icons.directions_bike, size: 16, color: Colors.grey.shade500),
-                        const SizedBox(width: 4),
-                        Text(
-                          'Delivery: ${CurrencyFormatter.formatDH(branch.deliveryFee)}',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey.shade700,
-                            fontWeight: FontWeight.w500,
-                          ),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.directions_bike, size: 16, color: Colors.grey.shade500),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Delivery: ${CurrencyFormatter.formatDH(branch.deliveryFee)}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey.shade700,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 16),
-                        Icon(Icons.access_time, size: 16, color: Colors.grey.shade500),
-                        const SizedBox(width: 4),
-                        Text(
-                          branch.deliveryTime,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey.shade700,
-                            fontWeight: FontWeight.w500,
-                          ),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.access_time, size: 16, color: Colors.grey.shade500),
+                            const SizedBox(width: 4),
+                            Text(
+                              branch.deliveryTime,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey.shade700,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),

@@ -117,12 +117,16 @@ class _AdminOrderCardState extends State<AdminOrderCard> {
                         children: [
                           Icon(Icons.storefront, size: 14, color: primaryColor),
                           const SizedBox(width: 6),
-                          Text(
-                            widget.order.branch.name,
-                            style: TextStyle(
-                              color: primaryColor,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
+                          Expanded(
+                            child: Text(
+                              widget.order.branch.name,
+                              style: TextStyle(
+                                color: primaryColor,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ],

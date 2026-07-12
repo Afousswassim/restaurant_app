@@ -27,20 +27,16 @@ class AppDrawer extends StatelessWidget {
         borderRadius: BorderRadius.horizontal(left: Radius.circular(24)),
       ),
       child: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minHeight: constraints.maxHeight,
-                ),
-                child: IntrinsicHeight(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
+        child: CustomScrollView(
+          physics: const BouncingScrollPhysics(),
+          slivers: [
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                         _buildHeader(context, isDarkMode),
                         const SizedBox(height: 12),
                         Divider(
@@ -155,11 +151,9 @@ class AppDrawer extends StatelessWidget {
                     ),
                   ),
                 ),
-              ),
-            );
-          }
+            ],
+          ),
         ),
-      ),
     );
   }
 
@@ -223,11 +217,7 @@ class AppDrawer extends StatelessWidget {
               color: isDarkMode ? Colors.white10 : const Color(0xFFF1F5F9),
               shape: BoxShape.circle,
             ),
-            child: Icon(
-              Icons.close,
-              size: 18,
-              color: isDarkMode ? Colors.white70 : const Color(0xFF64748B),
-            ),
+            child: const Icon(Icons.close, size: 18),
           ),
         ),
       ],

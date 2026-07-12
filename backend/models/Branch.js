@@ -18,6 +18,22 @@ const branchSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    city: {
+      type: String,
+      default: '',
+    },
+    phone: {
+      type: String,
+      default: '',
+    },
+    openingHours: {
+      type: String,
+      default: '',
+    },
+    qrUrl: {
+      type: String,
+      default: '',
+    },
     deliveryFee: {
       type: Number,
       required: true,

@@ -31,6 +31,15 @@ const menuItemSchema = new mongoose.Schema(
     offerPrice: {
       type: Number,
     },
+    offerTitle: {
+      type: String,
+    },
+    offerDescription: {
+      type: String,
+    },
+    offerStartDate: {
+      type: Date,
+    },
     offerExpiresAt: {
       type: Date,
     },

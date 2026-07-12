@@ -1,13 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../providers/cart_provider.dart';
 import '../providers/client_provider.dart';
-import '../screens/home_screen.dart';
-import '../screens/menu_screen.dart';
-import '../screens/cart_screen.dart';
-import '../screens/client_login_screen.dart';
-import '../screens/client_profile_screen.dart';
-import '../screens/orders_screen.dart';
 import '../utils/helpers.dart';
 
 class BottomNavBar extends StatelessWidget {
@@ -16,11 +11,11 @@ class BottomNavBar extends StatelessWidget {
   final VoidCallback? onMenuTap;
 
   const BottomNavBar({
-    Key? key,
+    super.key,
     required this.currentIndex,
     this.onHomeTap,
     this.onMenuTap,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -48,7 +43,7 @@ class BottomNavBar extends StatelessWidget {
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.06),
+                  color: Colors.black.withValues(alpha: 0.06),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),
@@ -205,37 +200,23 @@ class BottomNavBar extends StatelessWidget {
 
     switch (index) {
       case 0:
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => const HomeScreen()),
-          (route) => false,
-        );
+        Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
         break;
       case 1:
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => const MenuScreen()),
-          (route) => false,
-        );
+        Navigator.of(context).pushNamedAndRemoveUntil('/menu', (route) => false);
         break;
       case 2:
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const CartScreen()),
-        );
+        Navigator.of(context).pushReplacementNamed('/cart');
         break;
       case 3:
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const OrdersScreen()),
-        );
+        Navigator.of(context).pushReplacementNamed('/orders');
         break;
       case 4:
         final clientProvider = context.read<ClientProvider>();
         if (clientProvider.isAuthenticated) {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const ClientProfileScreen()),
-          );
+          Navigator.of(context).pushReplacementNamed('/client-profile');
         } else {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const ClientLoginScreen()),
-          );
+          Navigator.of(context).pushReplacementNamed('/client-login');
         }
         break;
     }

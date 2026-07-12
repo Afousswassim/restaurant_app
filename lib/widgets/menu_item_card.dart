@@ -14,7 +14,7 @@ class MenuItemCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    bool isActiveOffer = item.hasOffer && item.offerPrice != null && item.effectivePrice == item.offerPrice;
+    bool isActiveOffer = item.hasOffer && item.offerPrice != null && item.isOfferActive && item.effectivePrice == item.offerPrice;
 
     return Material(
       color: Colors.transparent,
@@ -37,24 +37,27 @@ class MenuItemCard extends StatelessWidget {
                 children: [
                   ClipRRect(
                     borderRadius: const BorderRadius.only(topLeft: Radius.circular(14), topRight: Radius.circular(14)),
-                    child: Image.network(
-                      item.imageUrl.isNotEmpty ? item.imageUrl : 'https://images.unsplash.com/photo-1495195134139-0d4517b28b9f?w=800&auto=format&fit=crop&q=80',
-                      height: 140,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => Container(
-                        height: 140,
-                        color: Colors.grey.shade200,
-                        child: const Icon(Icons.fastfood, size: 40, color: Colors.grey),
+                    child: AspectRatio(
+                      aspectRatio: 4 / 3,
+                      child: Image.network(
+                        item.imageUrl.isNotEmpty ? item.imageUrl : 'https://images.unsplash.com/photo-1495195134139-0d4517b28b9f?w=800&auto=format&fit=crop&q=80',
+                        width: double.infinity,
+                        height: double.infinity,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => Container(
+                          width: double.infinity,
+                          color: Colors.grey.shade200,
+                          child: const Icon(Icons.fastfood, size: 40, color: Colors.grey),
+                        ),
+                        loadingBuilder: (context, child, progress) {
+                          if (progress == null) return child;
+                          return Container(
+                            width: double.infinity,
+                            color: Colors.grey.shade100,
+                            child: const Center(child: CircularProgressIndicator(strokeWidth: 2, color: Colors.deepOrange)),
+                          );
+                        },
                       ),
-                      loadingBuilder: (context, child, progress) {
-                        if (progress == null) return child;
-                        return Container(
-                          height: 140,
-                          color: Colors.grey.shade100,
-                          child: const Center(child: CircularProgressIndicator(strokeWidth: 2, color: Colors.deepOrange)),
-                        );
-                      },
                     ),
                   ),
                   if (isActiveOffer)
@@ -100,8 +103,17 @@ class MenuItemCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        Expanded(child: Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14))),
+                        Expanded(
+                          child: Text(
+                            item.name,
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                           decoration: BoxDecoration(color: Colors.deepOrange.shade50, borderRadius: BorderRadius.circular(12)),
@@ -120,32 +132,40 @@ class MenuItemCard extends StatelessWidget {
                     const SizedBox(height: 12),
                     Row(
                       children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            if (isActiveOffer)
-                              Text(
-                                CurrencyFormatter.formatDH(item.price),
-                                style: const TextStyle(
-                                  decoration: TextDecoration.lineThrough,
-                                  color: Colors.grey,
-                                  fontSize: 11,
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (isActiveOffer)
+                                Text(
+                                  CurrencyFormatter.formatDH(item.price),
+                                  style: const TextStyle(
+                                    decoration: TextDecoration.lineThrough,
+                                    color: Colors.grey,
+                                    fontSize: 11,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
+                              Text(
+                                CurrencyFormatter.formatDH(item.effectivePrice),
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.deepOrange),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                            Text(
-                              CurrencyFormatter.formatDH(item.effectivePrice), 
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.deepOrange)
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                        const Spacer(),
-                        InkWell(
-                          onTap: onTap,
-                          borderRadius: BorderRadius.circular(12),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            decoration: BoxDecoration(color: Colors.deepOrange, borderRadius: BorderRadius.circular(12)),
-                            child: const Icon(Icons.add, color: Colors.white, size: 18),
+                        const SizedBox(width: 8),
+                        Flexible(
+                          child: InkWell(
+                            onTap: onTap,
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              decoration: BoxDecoration(color: Colors.deepOrange, borderRadius: BorderRadius.circular(12)),
+                              child: const Icon(Icons.add, color: Colors.white, size: 18),
+                            ),
                           ),
                         ),
                       ],

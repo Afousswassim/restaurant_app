@@ -37,6 +37,10 @@ dependencies:
   uuid: ^4.0.0
   shared_preferences: ^2.5.3
   qr_flutter: ^4.0.0
+  printing: ^5.15.0
+  pdf: ^3.13.0
+  share_plus: ^13.2.0
+  path_provider: ^2.1.6
 
 dev_dependencies:
   flutter_test:

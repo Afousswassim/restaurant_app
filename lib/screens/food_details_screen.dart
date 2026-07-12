@@ -124,37 +124,38 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     children: [
                       // Product Image Box
-                      Container(
-                        width: double.infinity,
-                        height: 250,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(24),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
-                              blurRadius: 10,
-                              offset: const Offset(0, 5),
-                            ),
-                          ],
-                        ),
-                        child: Stack(
-                          children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(24),
-                              child: Image.network(
-                                item.imageUrl.isNotEmpty
-                                    ? item.imageUrl
-                                    : 'https://images.unsplash.com/photo-1495195134139-0d4517b28b9f?w=600&h=300&fit=crop',
-                                width: double.infinity,
-                                height: 250,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) => Container(
-                                  height: 250,
-                                  color: theme.cardColor,
-                                  child: Icon(Icons.fastfood, size: 80, color: theme.dividerColor),
+                      AspectRatio(
+                        aspectRatio: 16 / 9,
+                        child: Container(
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(24),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.1),
+                                blurRadius: 10,
+                                offset: const Offset(0, 5),
+                              ),
+                            ],
+                          ),
+                          child: Stack(
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(24),
+                                child: Image.network(
+                                  item.imageUrl.isNotEmpty
+                                      ? item.imageUrl
+                                      : 'https://images.unsplash.com/photo-1495195134139-0d4517b28b9f?w=600&h=300&fit=crop',
+                                  width: double.infinity,
+                                  height: double.infinity,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) => Container(
+                                    width: double.infinity,
+                                    color: theme.cardColor,
+                                    child: Icon(Icons.fastfood, size: 80, color: theme.dividerColor),
+                                  ),
                                 ),
                               ),
-                            ),
                             if (hasActiveOffer && item.offerLabel != null)
                               Positioned(
                                 top: 16,
@@ -178,63 +179,80 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
                           ],
                         ),
                       ),
+                    ),
                       const SizedBox(height: 24),
 
                       // Product Info Card
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  item.name,
-                                  style: theme.textTheme.headlineSmall?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: colorScheme.onSurface,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Row(
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          final isNarrow = constraints.maxWidth < 520;
+                          return Wrap(
+                            spacing: 16,
+                            runSpacing: 12,
+                            children: [
+                              ConstrainedBox(
+                                constraints: BoxConstraints(maxWidth: isNarrow ? constraints.maxWidth : constraints.maxWidth - 140),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Icon(Icons.star, color: Colors.amber.shade600, size: 18),
-                                    const SizedBox(width: 4),
                                     Text(
-                                      item.rating.toStringAsFixed(1),
-                                      style: theme.textTheme.bodyMedium?.copyWith(
+                                      item.name,
+                                      style: theme.textTheme.headlineSmall?.copyWith(
                                         fontWeight: FontWeight.bold,
                                         color: colorScheme.onSurface,
                                       ),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(Icons.star, color: Colors.amber.shade600, size: 18),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          item.rating.toStringAsFixed(1),
+                                          style: theme.textTheme.bodyMedium?.copyWith(
+                                            fontWeight: FontWeight.bold,
+                                            color: colorScheme.onSurface,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              if (hasActiveOffer)
-                                Text(
-                                  CurrencyFormatter.formatDH(item.price),
-                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                    color: colorScheme.onSurface.withOpacity(0.5),
-                                    decoration: TextDecoration.lineThrough,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              Text(
-                                CurrencyFormatter.formatDH(item.effectivePrice),
-                                style: theme.textTheme.headlineSmall?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.deepOrange,
+                              ),
+                              ConstrainedBox(
+                                constraints: BoxConstraints(maxWidth: isNarrow ? constraints.maxWidth : 140),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    if (hasActiveOffer)
+                                      Text(
+                                        CurrencyFormatter.formatDH(item.price),
+                                        style: theme.textTheme.bodyMedium?.copyWith(
+                                          color: colorScheme.onSurface.withOpacity(0.5),
+                                          decoration: TextDecoration.lineThrough,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    Text(
+                                      CurrencyFormatter.formatDH(item.effectivePrice),
+                                      style: theme.textTheme.headlineSmall?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.deepOrange,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
                                 ),
                               ),
                             ],
-                          ),
-                        ],
+                          );
+                        },
                       ),
                       const SizedBox(height: 16),
                       Text(

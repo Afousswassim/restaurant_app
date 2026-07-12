@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/cart_provider.dart';
 import '../providers/branch_provider.dart';
 import '../providers/menu_provider.dart';
+import '../providers/category_provider.dart';
 import '../models/menu_item.dart';
 
 class PaperFlyerMenu extends StatefulWidget {
@@ -33,7 +34,11 @@ class _PaperFlyerMenuState extends State<PaperFlyerMenu> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final menuProvider = context.read<MenuProvider>();
       final branchProvider = context.read<BranchProvider>();
+      final categoryProvider = context.read<CategoryProvider>();
       final selectedBranch = branchProvider.selectedBranch;
+      
+      categoryProvider.loadCategories();
+
       if (selectedBranch != null && menuProvider.rawMenuItems.isEmpty && !menuProvider.isLoading) {
         menuProvider.loadMenu(selectedBranch.id);
       }
@@ -43,40 +48,24 @@ class _PaperFlyerMenuState extends State<PaperFlyerMenu> {
   @override
   Widget build(BuildContext context) {
     final menuProvider = context.watch<MenuProvider>();
+    final categoryProvider = context.watch<CategoryProvider>();
     final branchProvider = context.watch<BranchProvider>();
     final selectedBranch = branchProvider.selectedBranch;
     final branchName = selectedBranch?.name ?? widget.branchName;
 
-    // Group raw menu items by category (normalized map)
+    final activeCategories = categoryProvider.activeCategories;
+    
+    // Group raw menu items by category
     final Map<String, List<MenuItem>> groupedItems = {};
     for (var item in menuProvider.rawMenuItems) {
-      final cat = item.category.toLowerCase().trim();
-      String displayCat = item.category;
-      if (cat.contains('burger')) {
-        displayCat = 'Burger';
-      } else if (cat.contains('pizza')) {
-        displayCat = 'Pizza';
-      } else if (cat.contains('crepe')) {
-        displayCat = 'Crepe';
-      } else if (cat.contains('dessert') || cat.contains('sweet')) {
-        displayCat = 'Dessert';
-      } else if (cat.contains('drink') || cat.contains('beverage')) {
-        displayCat = 'Drinks';
-      }
-
-      groupedItems.putIfAbsent(displayCat, () => []).add(item);
+      final matchingCategory = activeCategories.firstWhere(
+        (cat) => cat.name.toLowerCase() == item.category.toLowerCase(),
+        orElse: () => activeCategories.isNotEmpty ? activeCategories.first : throw StateError('No categories'),
+      );
+      groupedItems.putIfAbsent(matchingCategory.name, () => []).add(item);
     }
 
-    // Sort categories based on requested order, placing others at the end
-    final categoryOrder = ['Burger', 'Pizza', 'Crepe', 'Dessert', 'Drinks'];
-    final sortedCategories = groupedItems.keys.toList();
-    sortedCategories.sort((a, b) {
-      int idxA = categoryOrder.indexWhere((c) => a.toLowerCase().contains(c.toLowerCase()));
-      int idxB = categoryOrder.indexWhere((c) => b.toLowerCase().contains(c.toLowerCase()));
-      if (idxA == -1) idxA = 999;
-      if (idxB == -1) idxB = 999;
-      return idxA.compareTo(idxB);
-    });
+    final sortedCategories = activeCategories.map((c) => c.name).where((name) => groupedItems.containsKey(name)).toList();
 
     return Container(
       decoration: const BoxDecoration(

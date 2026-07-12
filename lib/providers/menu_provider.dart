@@ -37,17 +37,31 @@ class MenuProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
+  List<MenuItem> _dedupeMenuItems(List<MenuItem> items) {
+    final seenIds = <String>{};
+    final seenKeys = <String>{};
+
+    return items.where((item) {
+      final normalizedKey = '${item.name.toLowerCase().trim()}|${item.category.toLowerCase().trim()}';
+      if (seenIds.contains(item.id) || seenKeys.contains(normalizedKey)) {
+        return false;
+      }
+      seenIds.add(item.id);
+      seenKeys.add(normalizedKey);
+      return true;
+    }).toList();
+  }
+
   Future<void> loadMenu(String? branchId) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
-      if (branchId != null && branchId.isNotEmpty) {
-        _menuItems = await ApiService.getMenuByBranch(branchId);
-      } else {
-        _menuItems = await ApiService.getMenu();
-      }
+      final loadedItems = branchId != null && branchId.isNotEmpty
+          ? await ApiService.getMenuByBranch(branchId)
+          : await ApiService.getMenu();
+      _menuItems = _dedupeMenuItems(loadedItems);
       _error = null;
     } catch (e) {
       _error = e.toString();

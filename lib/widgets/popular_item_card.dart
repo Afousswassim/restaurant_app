@@ -21,25 +21,28 @@ class PopularItemCard extends StatelessWidget {
         children: [
           ClipRRect(
             borderRadius: const BorderRadius.horizontal(left: Radius.circular(14)),
-            child: Image.network(
-              item.imageUrl.isNotEmpty ? item.imageUrl : 'https://images.unsplash.com/photo-1495195134139-0d4517b28b9f?w=800&auto=format&fit=crop&q=80',
-              width: 110,
-              height: 110,
-              fit: BoxFit.cover,
-              loadingBuilder: (context, child, loadingProgress) {
-                if (loadingProgress == null) return child;
-                return Container(
-                  width: 110,
-                  height: 110,
-                  color: Colors.grey.shade100,
-                  child: const Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.deepOrange))),
-                );
-              },
-              errorBuilder: (context, error, stackTrace) => Container(
-                width: 110,
-                height: 110,
-                color: Colors.grey.shade200,
-                child: const Icon(Icons.fastfood, size: 36, color: Colors.grey),
+            child: AspectRatio(
+              aspectRatio: 1,
+              child: Image.network(
+                item.imageUrl.isNotEmpty ? item.imageUrl : 'https://images.unsplash.com/photo-1495195134139-0d4517b28b9f?w=800&auto=format&fit=crop&q=80',
+                width: double.infinity,
+                height: double.infinity,
+                fit: BoxFit.cover,
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return Container(
+                    width: double.infinity,
+                    height: double.infinity,
+                    color: Colors.grey.shade100,
+                    child: const Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.deepOrange))),
+                  );
+                },
+                errorBuilder: (context, error, stackTrace) => Container(
+                  width: double.infinity,
+                  height: double.infinity,
+                  color: Colors.grey.shade200,
+                  child: const Icon(Icons.fastfood, size: 36, color: Colors.grey),
+                ),
               ),
             ),
           ),

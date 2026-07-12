@@ -36,6 +36,13 @@ module.exports = async (req, res, next) => {
       });
     }
 
+    if (client.status === 'Inactive' || client.status === 'Blocked') {
+      return res.status(403).json({
+        success: false,
+        message: 'Your account has been deactivated. Please contact support.',
+      });
+    }
+
     req.client = client;
     next();
   } catch (error) {

@@ -9,7 +9,9 @@ import 'providers/client_provider.dart';
 import 'providers/notification_provider.dart';
 import 'providers/theme_provider.dart';
 import 'providers/offers_provider.dart';
+import 'providers/category_provider.dart';
 import 'providers/ai_provider.dart';
+import 'providers/category_provider.dart';
 import 'screens/splash_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/branch_selection_screen.dart';
@@ -59,6 +61,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => NotificationProvider()),
         ChangeNotifierProvider(create: (_) => OffersProvider()),
         ChangeNotifierProvider(create: (_) => AiProvider()),
+        ChangeNotifierProvider(create: (_) => CategoryProvider()),
         ChangeNotifierProvider.value(value: themeProvider),
       ],
       child: Consumer<ThemeProvider>(
@@ -89,6 +92,29 @@ class MyApp extends StatelessWidget {
             darkTheme: darkTheme,
             themeMode: themeProv.isDarkMode ? ThemeMode.dark : ThemeMode.light,
             home: const SplashScreen(),
+            onGenerateRoute: (settings) {
+              final name = settings.name;
+              if (name != null && name.startsWith('/menu/')) {
+                final slug = name.substring('/menu/'.length);
+                if (slug.isNotEmpty) {
+                  return MaterialPageRoute(
+                    builder: (context) {
+                      // Schedule branch selection after frame
+                      WidgetsBinding.instance.addPostFrameCallback((_) async {
+                        final branchProv = context.read<BranchProvider>();
+                        await branchProv.selectBranchById(slug);
+                        if (branchProv.selectedBranch != null) {
+                          context.read<MenuProvider>().loadMenu(branchProv.selectedBranch!.id);
+                        }
+                      });
+                      return const MenuScreen();
+                    },
+                    settings: settings,
+                  );
+                }
+              }
+              return null; // Fallback to routes map
+            },
             routes: {
               HomeScreen.routeName: (ctx) => const HomeScreen(),
               BranchSelectionScreen.routeName: (ctx) => const BranchSelectionScreen(),

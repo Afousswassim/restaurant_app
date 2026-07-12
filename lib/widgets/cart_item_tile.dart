@@ -34,18 +34,18 @@ class CartItemTile extends StatelessWidget {
             // Item Image
             ClipRRect(
               borderRadius: BorderRadius.circular(12),
-              child: Image.network(
-                item.menuItem.imageUrl.isNotEmpty
-                    ? item.menuItem.imageUrl
-                    : 'https://images.unsplash.com/photo-1495195134139-0d4517b28b9f?w=200&h=200&fit=crop',
+              child: SizedBox(
                 width: 70,
                 height: 70,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => Container(
-                  width: 70,
-                  height: 70,
-                  color: Colors.grey.shade200,
-                  child: const Icon(Icons.fastfood, color: Colors.grey, size: 28),
+                child: Image.network(
+                  item.menuItem.imageUrl.isNotEmpty
+                      ? item.menuItem.imageUrl
+                      : 'https://images.unsplash.com/photo-1495195134139-0d4517b28b9f?w=200&h=200&fit=crop',
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    color: Colors.grey.shade200,
+                    child: const Icon(Icons.fastfood, color: Colors.grey, size: 28),
+                  ),
                 ),
               ),
             ),
@@ -62,6 +62,8 @@ class CartItemTile extends StatelessWidget {
                       fontWeight: FontWeight.bold,
                       fontSize: 14,
                     ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -71,6 +73,8 @@ class CartItemTile extends StatelessWidget {
                       color: Colors.grey.shade500,
                       fontStyle: FontStyle.italic,
                     ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 8),
                   Text(
@@ -79,6 +83,8 @@ class CartItemTile extends StatelessWidget {
                       fontSize: 12,
                       color: Colors.grey.shade600,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -88,11 +94,14 @@ class CartItemTile extends StatelessWidget {
                       fontSize: 14,
                       color: Colors.deepOrange,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
             ),
 
+            const SizedBox(width: 12),
             // Quantity controls
             Column(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -106,6 +115,7 @@ class CartItemTile extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     IconButton(
                       icon: const Icon(Icons.remove_circle_outline, size: 20),

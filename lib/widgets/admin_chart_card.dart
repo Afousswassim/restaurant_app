@@ -353,86 +353,163 @@ class AdminPopularProductsChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
-    // Standard mock list for visualization based on reference design
+    final textColor = isDark ? Colors.white : const Color(0xFF1E1E26);
+    final captionColor = isDark ? Colors.grey.shade400 : Colors.grey.shade600;
+    final backgroundColor = isDark ? const Color(0xFF1F1F28) : const Color(0xFFF9F9FB);
+    final progressBackground = isDark ? Colors.white12 : const Color(0xFFE8E8EA);
+
     final popularProducts = [
-      {'name': 'Tacos Mixte double', 'category': 'Tacos', 'sales': '4.8', 'percent': 0.85},
-      {'name': 'Panini Poulet', 'category': 'Panini', 'sales': '4.6', 'percent': 0.72},
-      {'name': 'Pizza Fruits de Mer', 'category': 'Pizza', 'sales': '4.5', 'percent': 0.61},
-      {'name': 'Cheeseburger', 'category': 'Burger', 'sales': '4.7', 'percent': 0.53},
-    ];
+      {'name': 'Tacos Mixte double', 'category': 'Tacos', 'rating': '4.8', 'percent': 0.85},
+      {'name': 'Panini Poulet', 'category': 'Panini', 'rating': '4.6', 'percent': 0.72},
+      {'name': 'Pizza Fruits de Mer', 'category': 'Pizza', 'rating': '4.5', 'percent': 0.61},
+      {'name': 'Cheeseburger', 'category': 'Burger', 'rating': '4.7', 'percent': 0.53},
+      {'name': 'Salade Fraîche Verte', 'category': 'Salads', 'rating': '4.4', 'percent': 0.48},
+    ]
+      ..sort((a, b) => (b['percent'] as double).compareTo(a['percent'] as double));
 
-    return Column(
-      children: popularProducts.map((prod) {
-        final name = prod['name'] as String;
-        final cat = prod['category'] as String;
-        final rating = prod['sales'] as String;
-        final pct = prod['percent'] as double;
+    final topProducts = popularProducts.take(5).toList();
 
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          name,
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: isDark ? Colors.white : const Color(0xFF1E1E26),
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        Text(
-                          cat,
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: isDark ? Colors.grey.shade400 : Colors.grey.shade500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Row(
+    if (topProducts.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 24),
+          child: Text(
+            '📦 No popular products available.',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: captionColor,
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: ListView.separated(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        physics: const BouncingScrollPhysics(),
+        itemCount: topProducts.length,
+        separatorBuilder: (context, index) => const SizedBox(height: 14),
+        itemBuilder: (context, index) {
+          final product = topProducts[index];
+          final name = product['name'] as String;
+          final category = product['category'] as String;
+          final rating = product['rating'] as String;
+          final percent = product['percent'] as double;
+          final percentLabel = '${(percent * 100).round()}%';
+
+          return SizedBox(
+            height: 92,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(Icons.star, size: 12, color: Colors.amber),
-                      const SizedBox(width: 2),
-                      Text(
-                        rating,
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.grey.shade300 : Colors.grey.shade700,
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              name,
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                                color: textColor,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              category,
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: captionColor,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
                         ),
+                      ),
+                      const SizedBox(width: 12),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.star, size: 14, color: Color(0xFFFFC107)),
+                          const SizedBox(width: 4),
+                          Text(
+                            rating,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: textColor,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                ],
-              ),
-              const SizedBox(height: 6),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(4),
-                child: LinearProgressIndicator(
-                  value: pct,
-                  backgroundColor: isDark ? Colors.grey.shade900 : Colors.grey.shade100,
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    Theme.of(context).colorScheme.primary,
-                  ),
-                  minHeight: 6,
                 ),
-              ),
-            ],
-          ),
-        );
-      }).toList(),
+                const SizedBox(height: 12),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          return Stack(
+                            children: [
+                              Container(
+                                width: constraints.maxWidth,
+                                height: 8,
+                                decoration: BoxDecoration(
+                                  color: progressBackground,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              Container(
+                                width: constraints.maxWidth * percent,
+                                height: 8,
+                                decoration: BoxDecoration(
+                                  gradient: const LinearGradient(
+                                    colors: [Color(0xFFB96B2D), Color(0xFFE58A2F)],
+                                    begin: Alignment.centerLeft,
+                                    end: Alignment.centerRight,
+                                  ),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      percentLabel,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: captionColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 }

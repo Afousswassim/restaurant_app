@@ -237,23 +237,28 @@ class _HomeScreenState extends State<HomeScreen> {
                 SliverToBoxAdapter(
                   child: SizedBox(
                     height: 130,
-                    child: ListView.separated(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      scrollDirection: Axis.horizontal,
-                      itemCount: previewItems.length,
-                      separatorBuilder: (_, __) => const SizedBox(width: 12),
-                      itemBuilder: (context, index) {
-                        final item = previewItems[index];
-                        return SizedBox(
-                          width: 330,
-                          child: PopularItemCard(
-                            item: item,
-                            onTap: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(builder: (_) => FoodDetailsScreen(menuItem: item)),
-                              );
-                            },
-                          ),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final itemWidth = constraints.maxWidth < 360 ? constraints.maxWidth * 0.9 : 330.0;
+                        return ListView.separated(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          scrollDirection: Axis.horizontal,
+                          itemCount: previewItems.length,
+                          separatorBuilder: (_, __) => const SizedBox(width: 12),
+                          itemBuilder: (context, index) {
+                            final item = previewItems[index];
+                            return SizedBox(
+                              width: itemWidth,
+                              child: PopularItemCard(
+                                item: item,
+                                onTap: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(builder: (_) => FoodDetailsScreen(menuItem: item)),
+                                  );
+                                },
+                              ),
+                            );
+                          },
                         );
                       },
                     ),
@@ -274,31 +279,39 @@ class _HomeScreenState extends State<HomeScreen> {
           return Container(
             constraints: const BoxConstraints(maxWidth: 500),
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            width: size.width - 32,
             child: FloatingActionButton.extended(
               onPressed: () {
                 Navigator.of(context).pushNamed(CartScreen.routeName);
               },
               backgroundColor: Colors.deepOrange,
               label: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   const Icon(Icons.shopping_cart, color: Colors.white),
                   const SizedBox(width: 8),
-                  Text(
-                    'View Cart (${cart.totalQuantity} items)',
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+                  Flexible(
+                    child: Text(
+                      'View Cart (${cart.totalQuantity} items)',
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+                    ),
                   ),
-                  const SizedBox(width: 16),
-                  Text(
-                    CurrencyFormatter.formatDH(cart.subtotal),
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+                  const SizedBox(width: 12),
+                  Flexible(
+                    child: Text(
+                      CurrencyFormatter.formatDH(cart.subtotal),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+                    ),
                   ),
                 ],
               ),
             ),
           );
         },
+
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       bottomNavigationBar: BottomNavBar(

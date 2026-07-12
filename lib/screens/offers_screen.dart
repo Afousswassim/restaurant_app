@@ -4,9 +4,7 @@ import 'package:provider/provider.dart';
 import '../providers/offers_provider.dart';
 import '../providers/theme_provider.dart';
 import '../providers/branch_provider.dart';
-import '../providers/menu_provider.dart';
 import '../providers/cart_provider.dart';
-import '../models/menu_item.dart';
 import '../widgets/offer_card.dart';
 import '../widgets/coupon_card.dart';
 import '../widgets/loyalty_card.dart';
@@ -15,10 +13,23 @@ import '../widgets/top_actions.dart';
 import '../widgets/bottom_nav_bar.dart';
 import '../providers/client_provider.dart';
 
-class OffersScreen extends StatelessWidget {
+class OffersScreen extends StatefulWidget {
   static const routeName = '/offers';
 
   const OffersScreen({super.key});
+
+  @override
+  State<OffersScreen> createState() => _OffersScreenState();
+}
+
+class _OffersScreenState extends State<OffersScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<OffersProvider>().loadOffers();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,15 +37,11 @@ class OffersScreen extends StatelessWidget {
     final isDarkMode = theme.brightness == Brightness.dark;
     final themeProv = context.watch<ThemeProvider>();
     final offersProvider = context.watch<OffersProvider>();
-    final menuProvider = context.watch<MenuProvider>();
     final clientProvider = context.watch<ClientProvider>();
     final cartProvider = context.read<CartProvider>();
-    final size = MediaQuery.of(context).size;
-    final isMobile = size.width < 600;
 
-    final rawItems = menuProvider.rawMenuItems;
-    final List<MenuItem> offerItems = rawItems.where((item) => item.hasOffer && item.effectivePrice != item.price).toList();
-    final bool hasNoOffers = offerItems.isEmpty && !menuProvider.isLoading;
+    final offerItems = offersProvider.offers;
+    final bool hasNoOffers = offerItems.isEmpty && !offersProvider.isLoading;
 
     return Scaffold(
       endDrawer: const AppDrawer(),
@@ -71,7 +78,7 @@ class OffersScreen extends StatelessWidget {
       body: Center(
         child: Container(
           constraints: const BoxConstraints(maxWidth: 800),
-          child: menuProvider.isLoading
+          child: offersProvider.isLoading
               ? const Center(
                   child: CircularProgressIndicator(
                     valueColor: AlwaysStoppedAnimation<Color>(Colors.deepOrange),
@@ -89,53 +96,58 @@ class OffersScreen extends StatelessWidget {
                           const SizedBox(height: 24),
                           _buildSectionTitle(theme, '🔥 Today\'s Best Deals'),
                           const SizedBox(height: 12),
-                          SizedBox(
-                            height: 290,
-                            child: ListView.builder(
-                              scrollDirection: Axis.horizontal,
-                              physics: const BouncingScrollPhysics(),
-                              itemCount: offerItems.length,
-                              itemBuilder: (context, index) {
-                                final offer = offerItems[index];
-                                return OfferCard(
-                                  offer: offer,
-                                  onOrderTap: () async {
-                                    final branchProvider = context.read<BranchProvider>();
-                                    final selectedBranch = branchProvider.selectedBranch;
-                                    if (selectedBranch == null) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(
-                                          content: Text('Please select a branch first.'),
-                                          behavior: SnackBarBehavior.floating,
-                                        ),
-                                      );
-                                      return;
-                                    }
-                                    try {
-                                      await cartProvider.addToCart(offer, selectedBranch, 1, []);
-                                      if (context.mounted) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(
-                                            content: Text('${offer.name} added to cart with offer price!'),
-                                            backgroundColor: Colors.green,
-                                            behavior: SnackBarBehavior.floating,
-                                          ),
-                                        );
-                                      }
-                                    } catch (e) {
-                                      if (context.mounted) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(
-                                            content: Text(e.toString()),
-                                            backgroundColor: Colors.red,
-                                          ),
-                                        );
-                                      }
-                                    }
-                                  },
-                                );
-                              },
-                            ),
+                          LayoutBuilder(
+                            builder: (context, constraints) {
+                              final itemWidth = constraints.maxWidth < 700
+                                  ? constraints.maxWidth
+                                  : (constraints.maxWidth / 2) - 10;
+                              return Wrap(
+                                spacing: 12,
+                                runSpacing: 12,
+                                children: offerItems.map((offer) {
+                                  return SizedBox(
+                                    width: itemWidth,
+                                    child: OfferCard(
+                                      offer: offer,
+                                      onOrderTap: () async {
+                                        final branchProvider = context.read<BranchProvider>();
+                                        final selectedBranch = branchProvider.selectedBranch;
+                                        if (selectedBranch == null) {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            const SnackBar(
+                                              content: Text('Please select a branch first.'),
+                                              behavior: SnackBarBehavior.floating,
+                                            ),
+                                          );
+                                          return;
+                                        }
+                                        try {
+                                          await cartProvider.addToCart(offer, selectedBranch, 1, []);
+                                          if (context.mounted) {
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              SnackBar(
+                                                content: Text('${offer.name} added to cart with offer price!'),
+                                                backgroundColor: Colors.green,
+                                                behavior: SnackBarBehavior.floating,
+                                              ),
+                                            );
+                                          }
+                                        } catch (e) {
+                                          if (context.mounted) {
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              SnackBar(
+                                                content: Text(e.toString()),
+                                                backgroundColor: Colors.red,
+                                              ),
+                                            );
+                                          }
+                                        }
+                                      },
+                                    ),
+                                  );
+                                }).toList(),
+                              );
+                            },
                           ),
                           const SizedBox(height: 28),
                           _buildSectionTitle(theme, '🎫 Exclusive Coupons'),
@@ -171,17 +183,26 @@ class OffersScreen extends StatelessWidget {
                                   content: Column(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      ListTile(
-                                        title: const Text('Free Drink (300 pts)'),
-                                        onTap: () => Navigator.pop(ctx, 'drink'),
+                                      Material(
+                                        color: Colors.transparent,
+                                        child: ListTile(
+                                          title: const Text('Free Drink (300 pts)'),
+                                          onTap: () => Navigator.pop(ctx, 'drink'),
+                                        ),
                                       ),
-                                      ListTile(
-                                        title: const Text('Free Burger (500 pts)'),
-                                        onTap: () => Navigator.pop(ctx, 'burger'),
+                                      Material(
+                                        color: Colors.transparent,
+                                        child: ListTile(
+                                          title: const Text('Free Burger (500 pts)'),
+                                          onTap: () => Navigator.pop(ctx, 'burger'),
+                                        ),
                                       ),
-                                      ListTile(
-                                        title: const Text('Free Meal (1000 pts)'),
-                                        onTap: () => Navigator.pop(ctx, 'meal'),
+                                      Material(
+                                        color: Colors.transparent,
+                                        child: ListTile(
+                                          title: const Text('Free Meal (1000 pts)'),
+                                          onTap: () => Navigator.pop(ctx, 'meal'),
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -213,7 +234,6 @@ class OffersScreen extends StatelessWidget {
                             },
                           ),
                           const SizedBox(height: 28),
-                          // Recommended Deals Section Removed
                         ],
                       ),
                     ),

@@ -29,6 +29,7 @@ exports.register = async (req, res) => {
       phone,
       email,
       password: hashPassword(password),
+      status: 'Active',
     });
 
     const token = Buffer.from(client._id.toString()).toString('base64');
@@ -71,6 +72,13 @@ exports.login = async (req, res) => {
       });
     }
 
+    if (client.status === 'Inactive' || client.status === 'Blocked') {
+      return res.status(403).json({
+        success: false,
+        message: 'Your account has been deactivated. Please contact support.',
+      });
+    }
+
     const hashedPassword = hashPassword(password);
     if (client.password !== hashedPassword) {
       return res.status(401).json({
@@ -78,6 +86,9 @@ exports.login = async (req, res) => {
         message: 'Invalid email or password',
       });
     }
+
+    client.lastLoginAt = new Date();
+    await client.save();
 
     const token = Buffer.from(client._id.toString()).toString('base64');
 

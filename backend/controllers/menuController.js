@@ -164,7 +164,7 @@ exports.deleteMenuItem = async (req, res) => {
 exports.updateMenuItemOffer = async (req, res) => {
   try {
     const { id } = req.params;
-    const { offerPrice, discountPercentage, offerExpiresAt, isOfferActive } = req.body;
+    const { offerPrice, discountPercentage, offerExpiresAt, offerTitle, offerDescription, offerLabel, offerStartDate, isOfferActive } = req.body;
 
     const item = await MenuItem.findById(id);
     if (!item) {
@@ -177,9 +177,12 @@ exports.updateMenuItemOffer = async (req, res) => {
     item.hasOffer = true;
     item.oldPrice = item.price;
     item.offerPrice = offerPrice;
-    item.offerLabel = discountPercentage ? `${discountPercentage}% OFF` : 'SALE';
-    item.offerExpiresAt = offerExpiresAt ? new Date(offerExpiresAt) : null;
-    item.isOfferActive = isOfferActive !== undefined ? isOfferActive : true;
+    item.offerLabel = offerLabel ?? (discountPercentage ? `${discountPercentage}% OFF` : 'SALE');
+    item.offerTitle = offerTitle ?? item.offerTitle;
+    item.offerDescription = offerDescription ?? item.offerDescription;
+    item.offerStartDate = offerStartDate ? new Date(offerStartDate) : item.offerStartDate;
+    item.offerExpiresAt = offerExpiresAt ? new Date(offerExpiresAt) : item.offerExpiresAt;
+    item.isOfferActive = isOfferActive !== undefined ? isOfferActive : item.isOfferActive;
 
     await item.save();
     res.status(200).json({

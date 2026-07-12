@@ -192,33 +192,44 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             ],
             const Divider(height: 24),
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Subtotal'),
-                Text(CurrencyFormatter.formatDH(cartProvider.subtotal)),
+                const Expanded(child: Text('Subtotal')),
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    CurrencyFormatter.formatDH(cartProvider.subtotal),
+                    textAlign: TextAlign.right,
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 8),
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Delivery Fee'),
-                Text(
-                  cartProvider.deliveryFee == 0.0 && cartProvider.appliedCouponCode != null 
-                      ? 'FREE' 
-                      : CurrencyFormatter.formatDH(cartProvider.deliveryFee)
+                const Expanded(child: Text('Delivery Fee')),
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    cartProvider.deliveryFee == 0.0 && cartProvider.appliedCouponCode != null
+                        ? 'FREE'
+                        : CurrencyFormatter.formatDH(cartProvider.deliveryFee),
+                    textAlign: TextAlign.right,
+                  ),
                 ),
               ],
             ),
             if (cartProvider.appliedCouponCode != null && cartProvider.couponDiscount > 0) ...[
               const SizedBox(height: 8),
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Discount (${cartProvider.appliedCouponCode})'),
-                  Text(
-                    '- ${CurrencyFormatter.formatDH(cartProvider.couponDiscount)}',
-                    style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
+                  Expanded(child: Text('Discount (${cartProvider.appliedCouponCode})')),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      '- ${CurrencyFormatter.formatDH(cartProvider.couponDiscount)}',
+                      textAlign: TextAlign.right,
+                      style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
+                    ),
                   ),
                 ],
               ),

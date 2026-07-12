@@ -6,6 +6,8 @@ import '../models/cart_item.dart';
 import '../models/order.dart';
 import '../models/notification.dart';
 import '../models/ai_recommendation.dart';
+import '../models/customer.dart';
+import '../models/category.dart';
 import '../config/app_config.dart';
 
 class ApiService {
@@ -38,31 +40,50 @@ class ApiService {
         case 'GET':
           response = await http
               .get(uri, headers: headers)
-              .timeout(timeoutDuration, onTimeout: () {
-            throw Exception('Request timeout after ${timeoutDuration.inSeconds}s');
-          });
+              .timeout(
+                timeoutDuration,
+                onTimeout: () {
+                  throw Exception(
+                    'Request timeout after ${timeoutDuration.inSeconds}s',
+                  );
+                },
+              );
           break;
         case 'POST':
           response = await http
-              .post(
-                uri,
-                headers: headers,
-                body: jsonEncode(body),
-              )
-              .timeout(timeoutDuration, onTimeout: () {
-            throw Exception('Request timeout after ${timeoutDuration.inSeconds}s');
-          });
+              .post(uri, headers: headers, body: jsonEncode(body))
+              .timeout(
+                timeoutDuration,
+                onTimeout: () {
+                  throw Exception(
+                    'Request timeout after ${timeoutDuration.inSeconds}s',
+                  );
+                },
+              );
           break;
         case 'PUT':
           response = await http
-              .put(
-                uri,
-                headers: headers,
-                body: jsonEncode(body),
-              )
-              .timeout(timeoutDuration, onTimeout: () {
-            throw Exception('Request timeout after ${timeoutDuration.inSeconds}s');
-          });
+              .put(uri, headers: headers, body: jsonEncode(body))
+              .timeout(
+                timeoutDuration,
+                onTimeout: () {
+                  throw Exception(
+                    'Request timeout after ${timeoutDuration.inSeconds}s',
+                  );
+                },
+              );
+          break;
+        case 'PATCH':
+          response = await http
+              .patch(uri, headers: headers, body: jsonEncode(body))
+              .timeout(
+                timeoutDuration,
+                onTimeout: () {
+                  throw Exception(
+                    'Request timeout after ${timeoutDuration.inSeconds}s',
+                  );
+                },
+              );
           break;
         case 'DELETE':
           response = await http
@@ -71,9 +92,14 @@ class ApiService {
                 headers: headers,
                 body: body != null ? jsonEncode(body) : null,
               )
-              .timeout(timeoutDuration, onTimeout: () {
-            throw Exception('Request timeout after ${timeoutDuration.inSeconds}s');
-          });
+              .timeout(
+                timeoutDuration,
+                onTimeout: () {
+                  throw Exception(
+                    'Request timeout after ${timeoutDuration.inSeconds}s',
+                  );
+                },
+              );
           break;
         default:
           throw Exception('Invalid HTTP method: $method');
@@ -84,21 +110,24 @@ class ApiService {
         if (jsonResponse['success'] == true) {
           return jsonResponse['data'];
         } else {
-          throw Exception(
-            jsonResponse['message'] ?? 'Request failed',
-          );
+          throw Exception(jsonResponse['message'] ?? 'Request failed');
         }
       } else {
         final jsonResponse = jsonDecode(response.body);
         throw Exception(
-          jsonResponse['message'] ?? 'Request failed with status ${response.statusCode}',
+          jsonResponse['message'] ??
+              'Request failed with status ${response.statusCode}',
         );
       }
     } on http.ClientException catch (e) {
-      throw Exception('Network error: ${e.message}. Please check your connection.');
+      throw Exception(
+        'Network error: ${e.message}. Please check your connection.',
+      );
     } on Exception catch (e) {
       if (e.toString().contains('Connection refused')) {
-        throw Exception('Cannot connect to server. Ensure backend is running on $baseUrl');
+        throw Exception(
+          'Cannot connect to server. Ensure backend is running on $baseUrl',
+        );
       }
       rethrow;
     } catch (e) {
@@ -114,6 +143,61 @@ class ApiService {
         .toList();
   }
 
+  // Categories endpoints
+  static Future<List<CategoryModel>> getPublicCategories() async {
+    final data = await _makeRequest('GET', '/categories');
+    return (data as List)
+        .map((item) => CategoryModel.fromJson(item as Map<String, dynamic>))
+        .toList();
+  }
+
+  static Future<List<CategoryModel>> getAdminCategories() async {
+    final data = await _makeRequest('GET', '/admin/categories');
+    return (data as List)
+        .map((item) => CategoryModel.fromJson(item as Map<String, dynamic>))
+        .toList();
+  }
+
+  static Future<CategoryModel> getAdminCategoryById(String id) async {
+    final data = await _makeRequest('GET', '/admin/categories/$id');
+    return CategoryModel.fromJson(data as Map<String, dynamic>);
+  }
+
+  static Future<CategoryModel> createAdminCategory(CategoryModel category) async {
+    final data = await _makeRequest(
+      'POST',
+      '/admin/categories',
+      body: category.toJson(),
+    );
+    return CategoryModel.fromJson(data as Map<String, dynamic>);
+  }
+
+  static Future<CategoryModel> updateAdminCategory(String id, Map<String, dynamic> updates) async {
+    final data = await _makeRequest(
+      'PUT',
+      '/admin/categories/$id',
+      body: updates,
+    );
+    return CategoryModel.fromJson(data as Map<String, dynamic>);
+  }
+
+  static Future<void> deleteAdminCategory(String id, {String? targetCategoryId}) async {
+    await _makeRequest(
+      'DELETE', 
+      '/admin/categories/$id',
+      body: targetCategoryId != null ? {'moveToCategoryId': targetCategoryId} : null,
+    );
+  }
+
+  static Future<CategoryModel> updateAdminCategoryStatus(String id, String status) async {
+    final data = await _makeRequest(
+      'PATCH',
+      '/admin/categories/$id/status',
+      body: {'status': status},
+    );
+    return CategoryModel.fromJson(data as Map<String, dynamic>);
+  }
+
   // Menu endpoints
   static Future<List<MenuItem>> getMenu() async {
     final data = await _makeRequest('GET', '/menu');
@@ -127,6 +211,284 @@ class ApiService {
     return (data as List)
         .map((item) => MenuItem.fromJson(item as Map<String, dynamic>))
         .toList();
+  }
+
+  static Future<List<MenuItem>> getActiveOffers() async {
+    final data = await _makeRequest('GET', '/offers');
+    return (data as List)
+        .map((item) => MenuItem.fromJson(item as Map<String, dynamic>))
+        .toList();
+  }
+
+  static Future<List<MenuItem>> getAdminOffers() async {
+    final data = await _makeRequest('GET', '/admin/offers');
+    return (data as List)
+        .map((item) => MenuItem.fromJson(item as Map<String, dynamic>))
+        .toList();
+  }
+
+  static Future<MenuItem> createOffer({
+    required String productId,
+    required String offerTitle,
+    String? offerDescription,
+    required double oldPrice,
+    required double offerPrice,
+    String? offerLabel,
+    int? discountPercentage,
+    required DateTime offerStartDate,
+    required DateTime offerExpiresAt,
+    required bool isOfferActive,
+  }) async {
+    final body = {
+      'productId': productId,
+      'offerTitle': offerTitle,
+      if (offerDescription != null) 'offerDescription': offerDescription,
+      'oldPrice': oldPrice,
+      'offerPrice': offerPrice,
+      if (offerLabel != null) 'offerLabel': offerLabel,
+      if (discountPercentage != null) 'discountPercentage': discountPercentage,
+      'offerStartDate': offerStartDate.toIso8601String(),
+      'offerExpiresAt': offerExpiresAt.toIso8601String(),
+      'isOfferActive': isOfferActive,
+    };
+
+    final data = await _makeRequest('POST', '/admin/offers', body: body);
+    return MenuItem.fromJson(data as Map<String, dynamic>);
+  }
+
+  static Future<MenuItem> updateOffer({
+    required String productId,
+    required String offerTitle,
+    String? offerDescription,
+    required double oldPrice,
+    required double offerPrice,
+    String? offerLabel,
+    int? discountPercentage,
+    required DateTime offerStartDate,
+    required DateTime offerExpiresAt,
+    required bool isOfferActive,
+  }) async {
+    final body = {
+      'offerTitle': offerTitle,
+      if (offerDescription != null) 'offerDescription': offerDescription,
+      'oldPrice': oldPrice,
+      'offerPrice': offerPrice,
+      if (offerLabel != null) 'offerLabel': offerLabel,
+      if (discountPercentage != null) 'discountPercentage': discountPercentage,
+      'offerStartDate': offerStartDate.toIso8601String(),
+      'offerExpiresAt': offerExpiresAt.toIso8601String(),
+      'isOfferActive': isOfferActive,
+    };
+
+    final data = await _makeRequest(
+      'PUT',
+      '/admin/offers/$productId',
+      body: body,
+    );
+    return MenuItem.fromJson(data as Map<String, dynamic>);
+  }
+
+  static Future<MenuItem> deleteOffer(String productId) async {
+    final data = await _makeRequest('DELETE', '/admin/offers/$productId');
+    return MenuItem.fromJson(data as Map<String, dynamic>);
+  }
+
+  static Future<MenuItem> toggleOffer({
+    required String productId,
+    required bool isActive,
+  }) async {
+    final data = await _makeRequest(
+      'PATCH',
+      '/admin/offers/$productId/toggle',
+      body: {'active': isActive},
+    );
+    return MenuItem.fromJson(data as Map<String, dynamic>);
+  }
+
+  static Future<List<Customer>> getAdminCustomers() async {
+    final data = await _makeRequest('GET', '/admin/customers');
+    return (data as List)
+        .map((item) => Customer.fromJson(item as Map<String, dynamic>))
+        .toList();
+  }
+
+  static Future<Map<String, dynamic>> getCustomerDetails(String id) async {
+    final data = await _makeRequest('GET', '/admin/customers/$id');
+    return data as Map<String, dynamic>;
+  }
+
+  static Future<Customer> createCustomer(
+    Customer customer,
+    String password,
+  ) async {
+    final body = customer.toJson();
+    body['password'] = password;
+    final data = await _makeRequest('POST', '/admin/customers', body: body);
+    return Customer.fromJson(data as Map<String, dynamic>);
+  }
+
+  static Future<Customer> updateCustomer(
+    Customer customer, {
+    String? password,
+  }) async {
+    final body = customer.toJson();
+    if (password != null && password.isNotEmpty) {
+      body['password'] = password;
+    }
+    final data = await _makeRequest(
+      'PUT',
+      '/admin/customers/${customer.id}',
+      body: body,
+    );
+    return Customer.fromJson(data as Map<String, dynamic>);
+  }
+
+  static Future<void> deleteCustomer(String id) async {
+    await _makeRequest('DELETE', '/admin/customers/$id');
+  }
+
+  static Future<Customer> updateCustomerStatus(String id, String status) async {
+    final data = await _makeRequest(
+      'PATCH',
+      '/admin/customers/$id/status',
+      body: {'status': status},
+    );
+    return Customer.fromJson(data as Map<String, dynamic>);
+  }
+
+  static Future<Customer> updateCustomerVip(String id, bool isVip) async {
+    final data = await _makeRequest(
+      'PATCH',
+      '/admin/customers/$id/vip',
+      body: {'vip': isVip},
+    );
+    return Customer.fromJson(data as Map<String, dynamic>);
+  }
+
+  static Future<Customer> updateCustomerRewards(
+    String id,
+    String action,
+    int points,
+  ) async {
+    final data = await _makeRequest(
+      'PATCH',
+      '/admin/customers/$id/rewards',
+      body: {'action': action, 'points': points},
+    );
+    return Customer.fromJson(data as Map<String, dynamic>);
+  }
+
+  static Future<void> sendCustomerNotification(
+    String clientId,
+    String title,
+    String message,
+  ) async {
+    await _makeRequest(
+      'POST',
+      '/notifications',
+      body: {
+        'clientId': clientId,
+        'orderId': 'admin_broadcast',
+        'title': title,
+        'message': message,
+      },
+    );
+  }
+
+  // Admin: create a menu item
+  static Future<MenuItem> createMenuItem({
+    String? branchId,
+    required String name,
+    String? description,
+    required double price,
+    String? imageUrl,
+    required String category,
+    List<ExtraOption>? extras,
+    int? calories,
+    int? protein,
+    List<String>? tags,
+    bool? isAvailable,
+  }) async {
+    final body = {
+      if (branchId != null) 'branchId': branchId,
+      'name': name,
+      'description': description ?? '',
+      'price': price,
+      'imageUrl': imageUrl ?? '',
+      'category': category,
+      'extras': extras?.map((e) => e.toJson()).toList() ?? [],
+      'calories': calories ?? 0,
+      'protein': protein ?? 0,
+      'tags': tags ?? [],
+      'isAvailable': isAvailable ?? true,
+    };
+
+    final data = await _makeRequest('POST', '/menu', body: body);
+    return MenuItem.fromJson(data as Map<String, dynamic>);
+  }
+
+  // Admin: update a menu item
+  static Future<MenuItem> updateMenuItem({
+    required String id,
+    String? branchId,
+    String? name,
+    String? description,
+    double? price,
+    String? imageUrl,
+    String? category,
+    List<ExtraOption>? extras,
+    int? calories,
+    int? protein,
+    List<String>? tags,
+    bool? isAvailable,
+  }) async {
+    final body = {
+      if (branchId != null) 'branchId': branchId,
+      if (name != null) 'name': name,
+      if (description != null) 'description': description,
+      if (price != null) 'price': price,
+      if (imageUrl != null) 'imageUrl': imageUrl,
+      if (category != null) 'category': category,
+      if (extras != null) 'extras': extras.map((e) => e.toJson()).toList(),
+      if (calories != null) 'calories': calories,
+      if (protein != null) 'protein': protein,
+      if (tags != null) 'tags': tags,
+      if (isAvailable != null) 'isAvailable': isAvailable,
+    };
+
+    final data = await _makeRequest('PUT', '/menu/$id', body: body);
+    return MenuItem.fromJson(data as Map<String, dynamic>);
+  }
+
+  // Admin: delete a menu item
+  static Future<void> deleteMenuItem(String id) async {
+    await _makeRequest('DELETE', '/menu/$id');
+  }
+
+  // Admin: update offer for a menu item
+  static Future<MenuItem> updateMenuItemOffer({
+    required String id,
+    required double offerPrice,
+    int? discountPercentage,
+    DateTime? offerExpiresAt,
+    bool? isOfferActive,
+  }) async {
+    final body = {
+      'offerPrice': offerPrice,
+      if (discountPercentage != null) 'discountPercentage': discountPercentage,
+      if (offerExpiresAt != null)
+        'offerExpiresAt': offerExpiresAt.toIso8601String(),
+      if (isOfferActive != null) 'isOfferActive': isOfferActive,
+    };
+
+    final data = await _makeRequest('PUT', '/menu/$id/offer', body: body);
+    return MenuItem.fromJson(data as Map<String, dynamic>);
+  }
+
+  // Admin: remove offer
+  static Future<MenuItem> deleteMenuItemOffer(String id) async {
+    final data = await _makeRequest('DELETE', '/menu/$id/offer');
+    return MenuItem.fromJson(data as Map<String, dynamic>);
   }
 
   // Cart endpoints
@@ -168,10 +530,7 @@ class ApiService {
     final data = await _makeRequest(
       'PUT',
       '/cart/$cartItemId',
-      body: {
-        'sessionId': sessionId,
-        'quantity': quantity,
-      },
+      body: {'sessionId': sessionId, 'quantity': quantity},
     );
     return (data as List)
         .map((item) => CartItem.fromJson(item as Map<String, dynamic>))
@@ -185,9 +544,7 @@ class ApiService {
     final data = await _makeRequest(
       'DELETE',
       '/cart/$cartItemId',
-      body: {
-        'sessionId': sessionId,
-      },
+      body: {'sessionId': sessionId},
     );
     return (data as List)
         .map((item) => CartItem.fromJson(item as Map<String, dynamic>))
@@ -238,30 +595,32 @@ class ApiService {
   }
 
   // Coupon endpoints
-  static Future<Map<String, dynamic>> validateCoupon(String code, double subtotal) async {
+  static Future<Map<String, dynamic>> validateCoupon(
+    String code,
+    double subtotal,
+  ) async {
     final data = await _makeRequest(
       'POST',
       '/coupons/validate',
-      body: {
-        'code': code,
-        'subtotal': subtotal,
-      },
+      body: {'code': code, 'subtotal': subtotal},
     );
     return data as Map<String, dynamic>;
   }
 
-  static Future<Map<String, dynamic>> redeemReward(String clientId, String rewardType) async {
-    print('[API] Redeem request - clientId: $clientId, rewardType: $rewardType');
-    
+  static Future<Map<String, dynamic>> redeemReward(
+    String clientId,
+    String rewardType,
+  ) async {
+    print(
+      '[API] Redeem request - clientId: $clientId, rewardType: $rewardType',
+    );
+
     final data = await _makeRequest(
       'POST',
       '/loyalty/redeem',
-      body: {
-        'clientId': clientId,
-        'rewardType': rewardType,
-      },
+      body: {'clientId': clientId, 'rewardType': rewardType},
     );
-    
+
     print('[API] Redeem response: $data');
     return data as Map<String, dynamic>;
   }
@@ -293,20 +652,13 @@ class ApiService {
     final data = await _makeRequest(
       'POST',
       '/clients/login',
-      body: {
-        'email': email,
-        'password': password,
-      },
+      body: {'email': email, 'password': password},
     );
     return data as Map<String, dynamic>;
   }
 
   static Future<Map<String, dynamic>> getClientProfile(String token) async {
-    final data = await _makeRequest(
-      'GET',
-      '/clients/profile',
-      token: token,
-    );
+    final data = await _makeRequest('GET', '/clients/profile', token: token);
     return data as Map<String, dynamic>;
   }
 
@@ -350,7 +702,9 @@ class ApiService {
         .toList();
   }
 
-  static Future<List<NotificationItem>> getNotifications(String clientId) async {
+  static Future<List<NotificationItem>> getNotifications(
+    String clientId,
+  ) async {
     final data = await _makeRequest('GET', '/notifications/$clientId');
     return (data as List)
         .map((item) => NotificationItem.fromJson(item as Map<String, dynamic>))
@@ -377,34 +731,30 @@ class ApiService {
   }
 
   static Future<void> markNotificationAsRead(String id) async {
-    await _makeRequest(
-      'PUT',
-      '/notifications/$id/read',
-    );
+    await _makeRequest('PUT', '/notifications/$id/read');
   }
 
   static Future<void> markAllNotificationsAsRead(String clientId) async {
-    await _makeRequest(
-      'PUT',
-      '/notifications/$clientId/read-all',
-    );
+    await _makeRequest('PUT', '/notifications/$clientId/read-all');
   }
 
   // Admin login API call
-  static Future<Map<String, dynamic>> adminLogin(String email, String password) async {
+  static Future<Map<String, dynamic>> adminLogin(
+    String email,
+    String password,
+  ) async {
     try {
       final uri = Uri.parse('$baseUrl/admin/login');
-      final response = await http.post(
-        uri,
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: jsonEncode({
-          'email': email,
-          'password': password,
-        }),
-      ).timeout(timeoutDuration);
+      final response = await http
+          .post(
+            uri,
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            body: jsonEncode({'email': email, 'password': password}),
+          )
+          .timeout(timeoutDuration);
 
       final jsonResponse = jsonDecode(response.body);
       if (response.statusCode >= 200 && response.statusCode < 300) {
@@ -414,7 +764,10 @@ class ApiService {
           throw Exception(jsonResponse['message'] ?? 'Login failed');
         }
       } else {
-        throw Exception(jsonResponse['message'] ?? 'Login failed with status ${response.statusCode}');
+        throw Exception(
+          jsonResponse['message'] ??
+              'Login failed with status ${response.statusCode}',
+        );
       }
     } on Exception {
       rethrow;

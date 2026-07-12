@@ -34,6 +34,22 @@ const clientSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    status: {
+      type: String,
+      enum: ['Active', 'Inactive', 'VIP', 'Blocked'],
+      default: 'Active',
+    },
+    city: {
+      type: String,
+      default: '',
+    },
+    avatar: {
+      type: String,
+      default: '',
+    },
+    lastLoginAt: {
+      type: Date,
+    },
   },
   { timestamps: true }
 );
