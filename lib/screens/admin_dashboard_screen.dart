@@ -1353,6 +1353,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         // Charts Section
         LayoutBuilder(
           builder: (context, constraints) {
+            final double width = constraints.maxWidth;
             final isSmall = width < 1100;
             if (isSmall) {
               return Column(
