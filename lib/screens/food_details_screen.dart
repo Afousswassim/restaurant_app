@@ -4,6 +4,7 @@ import '../models/menu_item.dart';
 import '../providers/branch_provider.dart';
 import '../providers/cart_provider.dart';
 import '../utils/helpers.dart';
+import '../widgets/client_navbar.dart';
 import '../widgets/top_actions.dart';
 import '../widgets/app_drawer.dart';
 
@@ -91,26 +92,11 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      endDrawer: const AppDrawer(),
-      appBar: AppBar(
-        backgroundColor: theme.scaffoldBackgroundColor,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: colorScheme.onSurface),
-          onPressed: () => Navigator.of(context).maybePop(),
-        ),
-        title: Text(
-          item.name,
-          style: theme.textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: colorScheme.primary,
-          ),
-        ),
-        centerTitle: true,
-        actions: const [
-          TopActions(),
-          SizedBox(width: 8),
-        ],
+      drawer: const AppDrawer(),
+      appBar: ClientNavbar(
+        title: item.name,
+        showBackButton: true,
+        showMenuButton: false,
       ),
       body: SafeArea(
         child: Column(
@@ -422,9 +408,9 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
                           Expanded(
                             flex: 1,
                             child: ElevatedButton(
-                              onPressed: _onAddToCart,
+                              onPressed: widget.menuItem.isAvailable ? _onAddToCart : null,
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.deepOrange,
+                                backgroundColor: widget.menuItem.isAvailable ? Colors.deepOrange : Colors.grey.shade400,
                                 foregroundColor: Colors.white,
                                 padding: const EdgeInsets.symmetric(vertical: 16),
                                 elevation: 0,
@@ -432,9 +418,9 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
                                   borderRadius: BorderRadius.circular(16),
                                 ),
                               ),
-                              child: const Text(
-                                'Add to Cart',
-                                style: TextStyle(
+                              child: Text(
+                                widget.menuItem.isAvailable ? 'Add to Cart' : 'Out of Stock',
+                                style: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
                                 ),

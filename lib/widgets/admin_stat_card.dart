@@ -20,20 +20,21 @@ class AdminStatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E1E26) : Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: isDark ? Colors.grey.shade900 : Colors.grey.shade100,
+          color: theme.dividerColor,
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.015),
-            blurRadius: 10,
+            color: colorScheme.onSurface.withOpacity(0.03),
+            blurRadius: 8,
             offset: const Offset(0, 4),
           ),
         ],
@@ -53,10 +54,10 @@ class AdminStatCard extends StatelessWidget {
                     title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
+                    style: theme.textTheme.bodyMedium?.copyWith(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: isDark ? Colors.grey.shade400 : Colors.grey.shade500,
+                      color: colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ),
@@ -81,10 +82,10 @@ class AdminStatCard extends StatelessWidget {
               children: [
                 Text(
                   value,
-                  style: TextStyle(
+                  style: theme.textTheme.titleLarge?.copyWith(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white : const Color(0xFF1E1E26),
+                    color: colorScheme.onSurface,
                   ),
                 ),
                 if (trend != null) ...[
@@ -109,9 +110,9 @@ class AdminStatCard extends StatelessWidget {
                       const SizedBox(width: 4),
                       Text(
                         'vs last month',
-                        style: TextStyle(
+                        style: theme.textTheme.bodySmall?.copyWith(
                           fontSize: 10,
-                          color: isDark ? Colors.grey.shade500 : Colors.grey.shade400,
+                          color: colorScheme.onSurfaceVariant.withOpacity(0.8),
                         ),
                       ),
                     ],

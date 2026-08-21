@@ -70,6 +70,9 @@ class CartProvider with ChangeNotifier {
   }
 
   Future<void> addToCart(MenuItem item, Branch branch, int quantity, List<ExtraOption> extras) async {
+    if (!item.isAvailable) {
+      throw Exception('This product is currently out of stock.');
+    }
     await SessionManager.ensureSession();
     _isLoading = true;
     _error = null;

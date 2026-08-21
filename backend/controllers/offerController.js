@@ -209,10 +209,14 @@ exports.toggleOfferStatus = async (req, res) => {
 exports.getActiveOffers = async (req, res) => {
   try {
     const now = new Date();
+    const Category = require('../models/Category');
+    const activeCategoryDocs = await Category.find({ status: 'Active' }).distinct('name');
+
     const offers = await MenuItem.find({
       hasOffer: true,
       isOfferActive: true,
       offerPrice: { $ne: null },
+      category: { $in: activeCategoryDocs },
       $and: [
         {
           $or: [

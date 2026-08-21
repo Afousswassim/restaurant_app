@@ -16,21 +16,22 @@ class AdminChartCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E1E26) : Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: isDark ? Colors.grey.shade900 : Colors.grey.shade100,
+          color: theme.dividerColor,
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.015),
-            blurRadius: 10,
+            color: colorScheme.onSurface.withOpacity(0.03),
+            blurRadius: 8,
             offset: const Offset(0, 4),
           ),
         ],
@@ -44,10 +45,9 @@ class AdminChartCard extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: TextStyle(
-                  fontSize: 16,
+                style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: isDark ? Colors.white : const Color(0xFF1E1E26),
+                  color: colorScheme.onSurface,
                 ),
               ),
               if (actions != null) Row(children: actions!),
@@ -344,172 +344,4 @@ class AdminRevenueBarChart extends StatelessWidget {
   }
 }
 
-// -------------------------------------------------------------------
-// 3. Popular Products: List with Progress Bars
-// -------------------------------------------------------------------
-class AdminPopularProductsChart extends StatelessWidget {
-  const AdminPopularProductsChart({Key? key}) : super(key: key);
 
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textColor = isDark ? Colors.white : const Color(0xFF1E1E26);
-    final captionColor = isDark ? Colors.grey.shade400 : Colors.grey.shade600;
-    final backgroundColor = isDark ? const Color(0xFF1F1F28) : const Color(0xFFF9F9FB);
-    final progressBackground = isDark ? Colors.white12 : const Color(0xFFE8E8EA);
-
-    final popularProducts = [
-      {'name': 'Tacos Mixte double', 'category': 'Tacos', 'rating': '4.8', 'percent': 0.85},
-      {'name': 'Panini Poulet', 'category': 'Panini', 'rating': '4.6', 'percent': 0.72},
-      {'name': 'Pizza Fruits de Mer', 'category': 'Pizza', 'rating': '4.5', 'percent': 0.61},
-      {'name': 'Cheeseburger', 'category': 'Burger', 'rating': '4.7', 'percent': 0.53},
-      {'name': 'Salade Fraîche Verte', 'category': 'Salads', 'rating': '4.4', 'percent': 0.48},
-    ]
-      ..sort((a, b) => (b['percent'] as double).compareTo(a['percent'] as double));
-
-    final topProducts = popularProducts.take(5).toList();
-
-    if (topProducts.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 24),
-          child: Text(
-            '📦 No popular products available.',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: captionColor,
-            ),
-          ),
-        ),
-      );
-    }
-
-    return Container(
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: ListView.separated(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        physics: const BouncingScrollPhysics(),
-        itemCount: topProducts.length,
-        separatorBuilder: (context, index) => const SizedBox(height: 14),
-        itemBuilder: (context, index) {
-          final product = topProducts[index];
-          final name = product['name'] as String;
-          final category = product['category'] as String;
-          final rating = product['rating'] as String;
-          final percent = product['percent'] as double;
-          final percentLabel = '${(percent * 100).round()}%';
-
-          return SizedBox(
-            height: 92,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              name,
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w700,
-                                color: textColor,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              category,
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: captionColor,
-                                fontWeight: FontWeight.w500,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.star, size: 14, color: Color(0xFFFFC107)),
-                          const SizedBox(width: 4),
-                          Text(
-                            rating,
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: textColor,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Expanded(
-                      child: LayoutBuilder(
-                        builder: (context, constraints) {
-                          return Stack(
-                            children: [
-                              Container(
-                                width: constraints.maxWidth,
-                                height: 8,
-                                decoration: BoxDecoration(
-                                  color: progressBackground,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              Container(
-                                width: constraints.maxWidth * percent,
-                                height: 8,
-                                decoration: BoxDecoration(
-                                  gradient: const LinearGradient(
-                                    colors: [Color(0xFFB96B2D), Color(0xFFE58A2F)],
-                                    begin: Alignment.centerLeft,
-                                    end: Alignment.centerRight,
-                                  ),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                            ],
-                          );
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Text(
-                      percentLabel,
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: captionColor,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
-}

@@ -24,7 +24,7 @@ class AppDrawer extends StatelessWidget {
       backgroundColor: isDarkMode ? const Color(0xFF121212) : const Color(0xFFFFFFFF),
       elevation: 0,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.horizontal(left: Radius.circular(24)),
+        borderRadius: BorderRadius.horizontal(right: Radius.circular(24)),
       ),
       child: SafeArea(
         child: CustomScrollView(
@@ -33,127 +33,256 @@ class AppDrawer extends StatelessWidget {
             SliverFillRemaining(
               hasScrollBody: false,
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+                padding: const EdgeInsets.all(16.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                        _buildHeader(context, isDarkMode),
-                        const SizedBox(height: 12),
-                        Divider(
-                          color: isDarkMode ? Colors.white10 : const Color(0xFFF1F5F9),
-                          height: 1,
+                    // Header Area
+                    _buildHeader(context, isDarkMode),
+                    const SizedBox(height: 12),
+                    Divider(
+                      color: isDarkMode ? Colors.white10 : const Color(0xFFF1F5F9),
+                      height: 1,
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Client Profile Card
+                    _buildProfileCard(context, client, initials, isAuthenticated, isDarkMode),
+                    const SizedBox(height: 20),
+
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: Text(
+                        'QUICK NAVIGATION',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: isDarkMode ? Colors.white38 : const Color(0xFF94A3B8),
+                          letterSpacing: 1.0,
                         ),
-                        const SizedBox(height: 16),
-                        _buildProfileCard(context, client, initials, isAuthenticated, isDarkMode),
-                        const SizedBox(height: 20),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 4),
-                          child: Text(
-                            'QUICK NAVIGATION',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                              color: isDarkMode ? Colors.white38 : const Color(0xFF94A3B8),
-                              letterSpacing: 1.0,
-                            ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+
+                    // Navigation Items
+                    _DrawerItem(
+                      icon: Icons.restaurant_menu_outlined,
+                      label: 'Home Dashboard',
+                      isActive: currentRoute == '/home' || currentRoute == '/' || currentRoute == '',
+                      onTap: () => _navigateNamed(context, '/home', replaceAll: true),
+                    ),
+                    _DrawerItem(
+                      icon: Icons.receipt_long_outlined,
+                      label: 'My Orders',
+                      isActive: currentRoute == '/orders',
+                      onTap: () => _navigateNamed(context, '/orders'),
+                    ),
+                    _DrawerItem(
+                      icon: Icons.smart_toy_outlined,
+                      label: 'AI Food Assistant',
+                      isActive: currentRoute == '/ai-food-assistant',
+                      onTap: () => _navigateNamed(context, '/ai-food-assistant'),
+                    ),
+                    _DrawerItem(
+                      icon: Icons.card_giftcard_outlined,
+                      label: 'Special Offers & Deals',
+                      isActive: currentRoute == '/offers',
+                      onTap: () => _navigateNamed(context, '/offers'),
+                      trailingBadge: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFD54F),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Text(
+                          'new',
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF5D4037),
                           ),
                         ),
-                        const SizedBox(height: 10),
-                        _DrawerItem(
-                          icon: Icons.restaurant_menu_outlined,
-                          label: 'Home Dashboard',
-                          isActive: currentRoute == '/home' || currentRoute == '/' || currentRoute == '',
-                          onTap: () => _navigateNamed(context, '/home', replaceAll: true),
+                      ),
+                    ),
+                    _DrawerItem(
+                      icon: Icons.phone_outlined,
+                      label: 'Contact Us',
+                      isActive: false,
+                      onTap: () => _showContactDialog(context),
+                    ),
+                    _DrawerItem(
+                      icon: Icons.person_outline,
+                      label: 'Update Profile',
+                      isActive: currentRoute == '/client-profile',
+                      onTap: () => _navigateNamed(context, '/client-profile'),
+                    ),
+                    _DrawerItem(
+                      icon: Icons.location_on_outlined,
+                      label: 'Change Branch',
+                      isActive: currentRoute == '/branch-selection',
+                      onTap: () => _navigateNamed(context, '/branch-selection'),
+                    ),
+
+                    const Spacer(),
+                    const SizedBox(height: 24),
+
+                    // Modern Support Card (Matches Admin Sidebar Support Card)
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: isDarkMode ? Colors.white10 : const Color(0xFFE2E8F0),
+                          width: 1,
                         ),
-                        _DrawerItem(
-                          icon: Icons.receipt_long_outlined,
-                          label: 'My Orders',
-                          isActive: currentRoute == '/orders',
-                          onTap: () => _navigateNamed(context, '/orders'),
-                        ),
-                        _DrawerItem(
-                          icon: Icons.smart_toy_outlined,
-                          label: 'AI Food Assistant',
-                          isActive: currentRoute == '/ai-food-assistant',
-                          onTap: () => _navigateNamed(context, '/ai-food-assistant'),
-                        ),
-                        _DrawerItem(
-                          icon: Icons.card_giftcard_outlined,
-                          label: 'Special Offers & Deals',
-                          isActive: currentRoute == '/offers',
-                          onTap: () => _navigateNamed(context, '/offers'),
-                          trailingBadge: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFFD54F),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: const Text(
-                              'new',
-                              style: TextStyle(
-                                fontSize: 9,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF5D4037),
-                              ),
-                            ),
-                          ),
-                        ),
-                        _DrawerItem(
-                          icon: Icons.phone_outlined,
-                          label: 'Contact Us',
-                          isActive: false,
-                          onTap: () => _showContactDialog(context),
-                        ),
-                        _DrawerItem(
-                          icon: Icons.person_outline,
-                          label: 'Update Profile',
-                          isActive: currentRoute == '/client-profile',
-                          onTap: () => _navigateNamed(context, '/client-profile'),
-                        ),
-                        _DrawerItem(
-                          icon: Icons.location_on_outlined,
-                          label: 'Change Branch',
-                          isActive: currentRoute == '/branch-selection',
-                          onTap: () => _navigateNamed(context, '/branch-selection'),
-                        ),
-                        const Spacer(),
-                        const SizedBox(height: 24),
-                        Divider(
-                          color: isDarkMode ? Colors.white10 : const Color(0xFFF1F5F9),
-                          height: 1,
-                        ),
-                        const SizedBox(height: 12),
-                        Align(
-                          alignment: Alignment.center,
-                          child: Column(
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
                             children: [
-                              Text(
-                                'Wassim Food © 2026',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                  color: isDarkMode ? Colors.white38 : const Color(0xFF94A3B8),
-                                ),
+                              Icon(
+                                Icons.contact_support_outlined,
+                                color: isDarkMode ? const Color(0xFFFF8A65) : const Color(0xFFD84315),
+                                size: 18,
                               ),
-                              const SizedBox(height: 4),
+                              const SizedBox(width: 8),
                               Text(
-                                'Fast Delivery • Fresh Food 🥞 🔥',
+                                'Need Assistance?',
                                 style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w500,
-                                  color: isDarkMode ? Colors.white30 : const Color(0xFFCBD5E1),
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
                                 ),
                               ),
                             ],
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 6),
+                          Text(
+                            'Customer service is online 24/7 for you.',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: isDarkMode ? Colors.white60 : Colors.grey.shade600,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          OutlinedButton(
+                            onPressed: () => _showContactDialog(context),
+                            style: OutlinedButton.styleFrom(
+                              side: BorderSide(
+                                color: (isDarkMode ? const Color(0xFFFF8A65) : const Color(0xFFD84315)).withValues(alpha: 0.5),
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                              minimumSize: const Size(double.infinity, 36),
+                            ),
+                            child: Text(
+                              'Contact Support',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: isDarkMode ? const Color(0xFFFF8A65) : const Color(0xFFD84315),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
+                    const SizedBox(height: 16),
+
+                    Divider(
+                      color: isDarkMode ? Colors.white10 : const Color(0xFFF1F5F9),
+                      height: 1,
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Copyright & Version Footer
+                    Align(
+                      alignment: Alignment.center,
+                      child: Column(
+                        children: [
+                          Text(
+                            'Wassim Food © 2026',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: isDarkMode ? Colors.white38 : const Color(0xFF94A3B8),
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Fast Delivery • Fresh Food 🥞 🔥',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w500,
+                              color: isDarkMode ? Colors.white30 : const Color(0xFFCBD5E1),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Premium Logout / Login Tile at bottom
+                    if (isAuthenticated)
+                      Material(
+                        color: Colors.transparent,
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                          leading: const Icon(
+                            Icons.logout_rounded,
+                            color: Colors.redAccent,
+                            size: 20,
+                          ),
+                          title: const Text(
+                            'Logout',
+                            style: TextStyle(
+                              color: Colors.redAccent,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          onTap: () => _handleLogout(context),
+                        ),
+                      )
+                    else
+                      Material(
+                        color: Colors.transparent,
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                          leading: const Icon(
+                            Icons.login_rounded,
+                            color: Color(0xFFD84315),
+                            size: 20,
+                          ),
+                          title: const Text(
+                            'Log In / Register',
+                            style: TextStyle(
+                              color: Color(0xFFD84315),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          onTap: () => _navigateNamed(context, '/client-login'),
+                        ),
+                      ),
+                  ],
                 ),
-            ],
-          ),
+              ),
+            ),
+          ],
         ),
+      ),
     );
   }
 
@@ -197,7 +326,7 @@ class AppDrawer extends StatelessWidget {
               ),
               const SizedBox(height: 2),
               Text(
-                'NASR CITY ORIGINAL',
+                'CLIENT PORTAL',
                 style: TextStyle(
                   fontSize: 9,
                   fontWeight: FontWeight.bold,
@@ -209,7 +338,14 @@ class AppDrawer extends StatelessWidget {
           ),
         ),
         GestureDetector(
-          onTap: () => Navigator.of(context).maybePop(),
+          onTap: () {
+            final scaffold = Scaffold.maybeOf(context);
+            if (scaffold?.isDrawerOpen == true) {
+              scaffold?.closeDrawer();
+            } else {
+              Navigator.of(context).maybePop();
+            }
+          },
           child: Container(
             width: 36,
             height: 36,
@@ -231,6 +367,8 @@ class AppDrawer extends StatelessWidget {
     bool isAuthenticated,
     bool isDarkMode,
   ) {
+    final clientName = isAuthenticated ? (client?.fullName ?? 'Guest User') : 'Guest User';
+
     return Card(
       elevation: 0,
       margin: EdgeInsets.zero,
@@ -244,124 +382,69 @@ class AppDrawer extends StatelessWidget {
       color: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: Column(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Container(
-                  width: 52,
-                  height: 52,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFFFB300),
-                    shape: BoxShape.circle,
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    initials,
-                    style: const TextStyle(
-                      fontSize: 18,
+            Container(
+              width: 52,
+              height: 52,
+              decoration: const BoxDecoration(
+                color: Color(0xFFFFB300),
+                shape: BoxShape.circle,
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                initials,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    clientName,
+                    style: TextStyle(
+                      fontSize: 15,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black,
+                      color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: isDarkMode ? const Color(0x26FFB300) : const Color(0xFFFFF8E1),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.emoji_events_outlined,
+                          size: 14,
+                          color: isDarkMode ? const Color(0xFFFFB300) : const Color(0xFFF57C00),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          isAuthenticated ? 'Points: ${client?.loyaltyPoints ?? 0}' : 'Guest User',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: isDarkMode ? const Color(0xFFFFB300) : const Color(0xFFF57C00),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        isAuthenticated ? (client?.fullName ?? 'Guest') : 'Guest User',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: isDarkMode ? const Color(0x26FFB300) : const Color(0xFFFFF8E1),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.emoji_events_outlined,
-                              size: 14,
-                              color: isDarkMode ? const Color(0xFFFFB300) : const Color(0xFFF57C00),
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              'Points: ${isAuthenticated ? (client?.loyaltyPoints ?? 0) : 0}',
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                                color: isDarkMode ? const Color(0xFFFFB300) : const Color(0xFFF57C00),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Divider(
-              color: isDarkMode ? Colors.white10 : const Color(0xFFE2E8F0),
-              height: 1,
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              height: 40,
-              child: TextButton(
-                onPressed: () {
-                  if (isAuthenticated) {
-                    _handleLogout(context);
-                  } else {
-                    _navigateNamed(context, '/client-login');
-                  }
-                },
-                style: TextButton.styleFrom(
-                  backgroundColor: isAuthenticated
-                      ? (isDarkMode ? const Color(0x26D32F2F) : const Color(0xFFFFEBEE))
-                      : (isDarkMode ? const Color(0x26E65100) : const Color(0xFFFFF3E0)),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  padding: EdgeInsets.zero,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      isAuthenticated ? Icons.logout : Icons.login,
-                      size: 18,
-                      color: isAuthenticated
-                          ? (isDarkMode ? const Color(0xFFEF5350) : const Color(0xFFD32F2F))
-                          : (isDarkMode ? const Color(0xFFFFB74D) : const Color(0xFFE65100)),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      isAuthenticated ? 'Log out & Clear profile' : 'Log In / Register',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
-                        color: isAuthenticated
-                            ? (isDarkMode ? const Color(0xFFEF5350) : const Color(0xFFD32F2F))
-                            : (isDarkMode ? const Color(0xFFFFB74D) : const Color(0xFFE65100)),
-                      ),
-                    ),
-                  ],
-                ),
+                ],
               ),
             ),
           ],
@@ -404,14 +487,24 @@ class AppDrawer extends StatelessWidget {
     );
 
     if (confirm == true) {
-      navigator.pop(); // dismiss drawer
+      final scaffold = Scaffold.maybeOf(context);
+      if (scaffold?.isDrawerOpen == true) {
+        scaffold?.closeDrawer();
+      } else {
+        navigator.pop();
+      }
       await clientProvider.logout();
       navigator.pushNamedAndRemoveUntil('/home', (route) => false);
     }
   }
 
   void _showContactDialog(BuildContext context) {
-    Navigator.of(context).pop();
+    final scaffold = Scaffold.maybeOf(context);
+    if (scaffold?.isDrawerOpen == true) {
+      scaffold?.closeDrawer();
+    } else {
+      Navigator.of(context).pop();
+    }
     showDialog(
       context: context,
       builder: (context) {
@@ -446,7 +539,12 @@ class AppDrawer extends StatelessWidget {
   }
 
   void _navigateNamed(BuildContext context, String route, {bool replaceAll = false}) {
-    Navigator.of(context).pop();
+    final scaffold = Scaffold.maybeOf(context);
+    if (scaffold?.isDrawerOpen == true) {
+      scaffold?.closeDrawer();
+    } else {
+      Navigator.of(context).pop();
+    }
     if (replaceAll) {
       Navigator.of(context).pushNamedAndRemoveUntil(route, (route) => false);
     } else {

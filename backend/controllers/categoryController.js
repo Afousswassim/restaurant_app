@@ -3,7 +3,7 @@ const MenuItem = require('../models/MenuItem');
 
 exports.getCategories = async (req, res) => {
   try {
-    const categories = await Category.find({ status: { $nin: ['Inactive', 'Hidden', 'Empty'] } }).sort({ sortOrder: 1, name: 1 });
+    const categories = await Category.find({ status: 'Active' }).sort({ sortOrder: 1, name: 1 });
     const data = [];
     for (const cat of categories) {
       const productCount = await MenuItem.countDocuments({ category: cat.name });

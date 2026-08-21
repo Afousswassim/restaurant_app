@@ -9,6 +9,7 @@ import '../widgets/offer_card.dart';
 import '../widgets/coupon_card.dart';
 import '../widgets/loyalty_card.dart';
 import '../widgets/app_drawer.dart';
+import '../widgets/client_navbar.dart';
 import '../widgets/top_actions.dart';
 import '../widgets/bottom_nav_bar.dart';
 import '../providers/client_provider.dart';
@@ -44,37 +45,9 @@ class _OffersScreenState extends State<OffersScreen> {
     final bool hasNoOffers = offerItems.isEmpty && !offersProvider.isLoading;
 
     return Scaffold(
-      endDrawer: const AppDrawer(),
+      drawer: const AppDrawer(),
       bottomNavigationBar: const BottomNavBar(currentIndex: -1),
-      appBar: AppBar(
-        backgroundColor: theme.scaffoldBackgroundColor,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: isDarkMode ? Colors.white : Colors.black87),
-          onPressed: () => Navigator.of(context).maybePop(),
-        ),
-        title: Text(
-          'Special Offers',
-          style: theme.textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: theme.colorScheme.primary,
-          ),
-        ),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: Icon(themeProv.isDarkMode ? Icons.light_mode : Icons.dark_mode),
-            onPressed: () => themeProv.setDarkMode(!themeProv.isDarkMode),
-          ),
-          const TopActions(),
-          Builder(
-            builder: (ctx) => IconButton(
-              icon: const Icon(Icons.menu),
-              onPressed: () => Scaffold.of(ctx).openEndDrawer(),
-            ),
-          ),
-        ],
-      ),
+      appBar: const ClientNavbar(title: 'Special Offers'),
       body: Center(
         child: Container(
           constraints: const BoxConstraints(maxWidth: 800),

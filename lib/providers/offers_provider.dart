@@ -21,7 +21,8 @@ class OffersProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      _offers = await ApiService.getActiveOffers();
+      final items = await ApiService.getActiveOffers();
+      _offers = items.where((item) => item.isCurrentlyActiveOffer).toList();
       _error = null;
     } catch (e) {
       _error = e.toString();

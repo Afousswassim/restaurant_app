@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/client_navbar.dart';
 import '../widgets/top_actions.dart';
 import '../widgets/app_drawer.dart';
 
@@ -12,14 +13,11 @@ class SettingsScreen extends StatelessWidget {
     final textTheme = theme.textTheme;
 
     return Scaffold(
-      endDrawer: const AppDrawer(),
-      appBar: AppBar(
-        title: Text('Settings', style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: theme.colorScheme.primary)),
-        centerTitle: true,
-        backgroundColor: theme.scaffoldBackgroundColor,
-        elevation: 0,
-        shape: Border(bottom: BorderSide(color: theme.dividerColor)),
-        actions: const [TopActions()],
+      drawer: const AppDrawer(),
+      appBar: const ClientNavbar(
+        title: 'Settings',
+        showBackButton: true,
+        showMenuButton: false,
       ),
       body: Center(
         child: Padding(

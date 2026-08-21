@@ -21,8 +21,6 @@ const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
 
-connectDB();
-
 app.use(cors());
 
 app.use(express.json({ limit: '50mb' }));

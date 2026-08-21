@@ -4,6 +4,7 @@ import '../providers/client_provider.dart';
 import '../widgets/top_actions.dart';
 import '../widgets/app_drawer.dart';
 import '../widgets/bottom_nav_bar.dart';
+import '../widgets/client_navbar.dart';
 import '../utils/helpers.dart';
 import 'client_register_screen.dart';
 import 'client_profile_screen.dart';
@@ -61,22 +62,8 @@ class _ClientLoginScreenState extends State<ClientLoginScreen> {
 
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
-      endDrawer: const AppDrawer(),
-      appBar: AppBar(
-        title: const Text(
-          'Client Login',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.deepOrange),
-        ),
-        centerTitle: true,
-        backgroundColor: Colors.white,
-        elevation: 0,
-        shape: Border(
-          bottom: BorderSide(color: Colors.grey.shade100),
-        ),
-        actions: const [
-          TopActions(),
-        ],
-      ),
+      drawer: const AppDrawer(),
+      appBar: const ClientNavbar(title: 'Client Login'),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),

@@ -145,15 +145,16 @@ class MenuItem {
     'tags': tags,
   };
 
-  double get effectivePrice {
+  bool get isCurrentlyActiveOffer {
+    if (!hasOffer || offerPrice == null || !isOfferActive) return false;
     final now = DateTime.now();
-    if (hasOffer && offerPrice != null && isOfferActive) {
-      if (offerStartDate != null && offerStartDate!.isAfter(now)) {
-        return price;
-      }
-      if (offerExpiresAt != null && now.isAfter(offerExpiresAt!)) {
-        return price;
-      }
+    if (offerStartDate != null && offerStartDate!.isAfter(now)) return false;
+    if (offerExpiresAt != null && now.isAfter(offerExpiresAt!)) return false;
+    return true;
+  }
+
+  double get effectivePrice {
+    if (isCurrentlyActiveOffer) {
       return offerPrice!;
     }
     return price;

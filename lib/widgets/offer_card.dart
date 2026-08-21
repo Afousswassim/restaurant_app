@@ -12,6 +12,7 @@ class OfferCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDarkMode = theme.brightness == Brightness.dark;
+    final isOutOfStock = !offer.isAvailable;
 
     return ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 320),
@@ -53,25 +54,50 @@ class OfferCard extends StatelessWidget {
                         child: const Icon(Icons.fastfood, size: 48),
                       ),
                     ),
-                    Positioned(
-                      top: 12,
-                      left: 12,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: Colors.deepOrange,
-                          borderRadius: BorderRadius.circular(12),
+                    if (isOutOfStock)
+                      Positioned.fill(
+                        child: Container(
+                          color: Colors.black.withValues(alpha: 0.55),
+                          child: Center(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                              decoration: BoxDecoration(
+                                color: Colors.red.shade700,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Text(
+                                'OUT OF STOCK',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ),
+                          ),
                         ),
-                        child: Text(
-                          offer.offerLabel ?? 'OFFER',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
+                      )
+                    else
+                      Positioned(
+                        top: 12,
+                        left: 12,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.deepOrange,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            offer.offerLabel ?? 'OFFER',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
                           ),
                         ),
                       ),
-                    ),
                   ],
                 ),
               ),
@@ -135,9 +161,9 @@ class OfferCard extends StatelessWidget {
                           child: SizedBox(
                             height: 36,
                             child: ElevatedButton(
-                              onPressed: onOrderTap,
+                              onPressed: isOutOfStock ? null : onOrderTap,
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.deepOrange,
+                                backgroundColor: isOutOfStock ? Colors.grey.shade400 : Colors.deepOrange,
                                 foregroundColor: Colors.white,
                                 elevation: 0,
                                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
@@ -145,11 +171,11 @@ class OfferCard extends StatelessWidget {
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                               ),
-                              child: const FittedBox(
+                              child: FittedBox(
                                 fit: BoxFit.scaleDown,
                                 child: Text(
-                                  'Order Now',
-                                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                                  isOutOfStock ? 'Out of Stock' : 'Order Now',
+                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                                 ),
                               ),
                             ),

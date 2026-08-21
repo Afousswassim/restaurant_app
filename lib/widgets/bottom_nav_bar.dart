@@ -20,9 +20,9 @@ class BottomNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final size = MediaQuery.of(context).size;
     final isMobile = ResponsiveUtil.isMobile(size.width);
-    final primaryColor = theme.colorScheme.primary;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -39,12 +39,16 @@ class BottomNavBar extends StatelessWidget {
               top: 4,
             ),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
               borderRadius: BorderRadius.circular(24),
+              border: Border.all(
+                color: isDark ? Colors.white.withOpacity(0.08) : const Color(0xFFF1F5F9),
+                width: 1,
+              ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.06),
-                  blurRadius: 12,
+                  color: Colors.black.withOpacity(isDark ? 0.35 : 0.08),
+                  blurRadius: 18,
                   offset: const Offset(0, 4),
                 ),
               ],
@@ -52,55 +56,55 @@ class BottomNavBar extends StatelessWidget {
             child: SafeArea(
               top: false,
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
                     _buildNavItem(
                       context: context,
                       index: 0,
-                      icon: Icons.home,
+                      activeIcon: Icons.home_rounded,
+                      inactiveIcon: Icons.home_outlined,
                       label: 'Home',
                       isSelected: currentIndex == 0,
-                      primaryColor: primaryColor,
                     ),
                     _buildNavItem(
                       context: context,
                       index: 1,
-                      icon: Icons.restaurant_menu,
+                      activeIcon: Icons.restaurant_menu_rounded,
+                      inactiveIcon: Icons.restaurant_menu_outlined,
                       label: 'Menu',
                       isSelected: currentIndex == 1,
-                      primaryColor: primaryColor,
                     ),
                     _buildNavItem(
                       context: context,
                       index: 2,
-                      icon: Icons.shopping_cart,
+                      activeIcon: Icons.shopping_bag_rounded,
+                      inactiveIcon: Icons.shopping_bag_outlined,
                       label: 'My Cart',
                       isSelected: currentIndex == 2,
-                      primaryColor: primaryColor,
                       showBadge: true,
                     ),
                     _buildNavItem(
                       context: context,
                       index: 3,
-                      icon: Icons.receipt_long,
+                      activeIcon: Icons.receipt_long_rounded,
+                      inactiveIcon: Icons.receipt_long_outlined,
                       label: 'Orders',
                       isSelected: currentIndex == 3,
-                      primaryColor: primaryColor,
                     ),
                     Consumer<ClientProvider>(
                       builder: (context, clientProvider, _) {
                         final label = clientProvider.isAuthenticated
                             ? (clientProvider.currentClient?.fullName.split(' ').first ?? 'Profile')
-                            : 'Login';
+                            : 'Profile';
                         return _buildNavItem(
                           context: context,
                           index: 4,
-                          icon: Icons.person,
+                          activeIcon: Icons.person_rounded,
+                          inactiveIcon: Icons.person_outline_rounded,
                           label: label,
                           isSelected: currentIndex == 4,
-                          primaryColor: primaryColor,
                         );
                       },
                     ),
@@ -117,72 +121,87 @@ class BottomNavBar extends StatelessWidget {
   Widget _buildNavItem({
     required BuildContext context,
     required int index,
-    required IconData icon,
+    required IconData activeIcon,
+    required IconData inactiveIcon,
     required String label,
     required bool isSelected,
-    required Color primaryColor,
     bool showBadge = false,
   }) {
-    return InkWell(
-      onTap: () => _onTap(context, index),
-      borderRadius: BorderRadius.circular(16),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Icon(
-                  icon,
-                  color: isSelected ? primaryColor : Colors.grey.shade500,
-                  size: 24,
-                ),
-                if (showBadge)
-                  Consumer<CartProvider>(
-                    builder: (context, cart, _) {
-                      if (cart.totalQuantity == 0) return const SizedBox.shrink();
-                      return Positioned(
-                        right: -6,
-                        top: -6,
-                        child: Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: const BoxDecoration(
-                            color: Colors.red,
-                            shape: BoxShape.circle,
-                          ),
-                          constraints: const BoxConstraints(
-                            minWidth: 16,
-                            minHeight: 16,
-                          ),
-                          child: Center(
-                            child: Text(
-                              '${cart.totalQuantity}',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 9,
-                                fontWeight: FontWeight.bold,
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final activeColor = Colors.deepOrange;
+    final inactiveColor = isDark ? Colors.white60 : Colors.grey.shade600;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => _onTap(context, index),
+        borderRadius: BorderRadius.circular(18),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? (isDark ? Colors.deepOrange.withOpacity(0.18) : Colors.deepOrange.shade50)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Icon(
+                    isSelected ? activeIcon : inactiveIcon,
+                    color: isSelected ? activeColor : inactiveColor,
+                    size: 22,
+                  ),
+                  if (showBadge)
+                    Consumer<CartProvider>(
+                      builder: (context, cart, _) {
+                        if (cart.totalQuantity == 0) return const SizedBox.shrink();
+                        return Positioned(
+                          right: -6,
+                          top: -4,
+                          child: Container(
+                            padding: const EdgeInsets.all(3),
+                            decoration: const BoxDecoration(
+                              color: Colors.red,
+                              shape: BoxShape.circle,
+                            ),
+                            constraints: const BoxConstraints(
+                              minWidth: 16,
+                              minHeight: 16,
+                            ),
+                            child: Center(
+                              child: Text(
+                                '${cart.totalQuantity}',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                textAlign: TextAlign.center,
                               ),
-                              textAlign: TextAlign.center,
                             ),
                           ),
-                        ),
-                      );
-                    },
-                  ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                color: isSelected ? primaryColor : Colors.grey.shade600,
-                fontSize: 11,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        );
+                      },
+                    ),
+                ],
               ),
-            ),
-          ],
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  color: isSelected ? activeColor : inactiveColor,
+                  fontSize: 11,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -221,6 +240,4 @@ class BottomNavBar extends StatelessWidget {
         break;
     }
   }
-
-
 }

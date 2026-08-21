@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/client_provider.dart';
 import '../providers/theme_provider.dart';
+import '../widgets/client_navbar.dart';
 import '../widgets/top_actions.dart';
 import '../widgets/app_drawer.dart';
 import '../widgets/bottom_nav_bar.dart';
@@ -189,25 +190,8 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      endDrawer: const AppDrawer(),
-      appBar: AppBar(
-        title: Text(
-          'My Profile',
-          style: textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: colorScheme.primary,
-          ),
-        ),
-        centerTitle: true,
-        backgroundColor: theme.scaffoldBackgroundColor,
-        elevation: 0,
-        shape: Border(
-          bottom: BorderSide(color: theme.dividerColor),
-        ),
-        actions: const [
-          TopActions(),
-        ],
-      ),
+      drawer: const AppDrawer(),
+      appBar: const ClientNavbar(title: 'My Profile'),
       body: Center(
         child: Container(
           constraints: BoxConstraints(

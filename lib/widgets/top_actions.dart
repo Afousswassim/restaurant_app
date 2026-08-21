@@ -12,53 +12,16 @@ class TopActions extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer3<NotificationProvider, ThemeProvider, ClientProvider>(
       builder: (context, notificationProv, themeProv, clientProv, _) {
-        final theme = Theme.of(context);
-        final isDark = themeProv.isDarkMode;
-        final iconColor = theme.colorScheme.onSurface;
         final badgeCount = notificationProv.unreadCount;
-        final scaffoldState = Scaffold.maybeOf(context);
-        final hasEndDrawer = scaffoldState?.widget.endDrawer != null;
 
         return Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (hasEndDrawer)
-              Row(
-                children: [
-                  _buildActionButton(
-                    context: context,
-                    child: Icon(Icons.menu, color: iconColor, size: 18),
-                    onTap: scaffoldState?.openEndDrawer ?? () {},
-                  ),
-                  const SizedBox(width: 8),
-                ],
-              ),
             _buildActionButton(
               context: context,
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Icon(
-                    Icons.notifications_none,
-                    color: iconColor,
-                    size: 18,
-                  ),
-                  if (badgeCount > 0)
-                    Positioned(
-                      right: -2,
-                      top: -2,
-                      child: Container(
-                        width: 10,
-                        height: 10,
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.error,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: theme.scaffoldBackgroundColor, width: 1.5),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
+              icon: Icons.notifications_none_rounded,
+              badgeCount: badgeCount,
+              tooltip: 'Notifications',
               onTap: () {
                 if (clientProv.currentClient != null) {
                   notificationProv.loadNotifications(clientProv.currentClient!.id);
@@ -69,11 +32,10 @@ class TopActions extends StatelessWidget {
             const SizedBox(width: 8),
             _buildActionButton(
               context: context,
-              child: Icon(
-                isDark ? Icons.wb_sunny_outlined : Icons.nightlight_round,
-                color: iconColor,
-                size: 18,
-              ),
+              icon: themeProv.isDarkMode
+                  ? Icons.light_mode_outlined
+                  : Icons.dark_mode_outlined,
+              tooltip: 'Toggle Theme',
               onTap: () => themeProv.toggleTheme(),
             ),
           ],
@@ -82,33 +44,66 @@ class TopActions extends StatelessWidget {
     );
   }
 
-  Widget _buildActionButton({required BuildContext context, required Widget child, required VoidCallback onTap}) {
+  Widget _buildActionButton({
+    required BuildContext context,
+    required IconData icon,
+    required VoidCallback onTap,
+    String? tooltip,
+    int badgeCount = 0,
+  }) {
     final theme = Theme.of(context);
-    final backgroundColor = theme.brightness == Brightness.dark
-        ? theme.colorScheme.surfaceVariant
-        : Colors.white;
+    final isDark = theme.brightness == Brightness.dark;
+    final bgColor = isDark ? const Color(0xFF2A2A2A) : Colors.grey.shade100;
+    final borderColor = isDark ? Colors.white10 : Colors.black.withOpacity(0.06);
+    final iconColor = isDark ? Colors.white : Colors.black87;
 
-    return Container(
-      width: 42,
-      height: 42,
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        shape: BoxShape.circle,
-        border: Border.all(color: theme.dividerColor.withOpacity(0.7), width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: theme.colorScheme.onSurface.withOpacity(0.08),
-            blurRadius: 6,
-            offset: const Offset(0, 3),
+    return Tooltip(
+      message: tooltip ?? '',
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: borderColor, width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.03),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(12),
+            child: Stack(
+              alignment: Alignment.center,
+              clipBehavior: Clip.none,
+              children: [
+                Icon(
+                  icon,
+                  size: 20,
+                  color: iconColor,
+                ),
+                if (badgeCount > 0)
+                  Positioned(
+                    top: 6,
+                    right: 6,
+                    child: Container(
+                      width: 8,
+                      height: 8,
+                      decoration: const BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          customBorder: const CircleBorder(),
-          child: Center(child: child),
         ),
       ),
     );

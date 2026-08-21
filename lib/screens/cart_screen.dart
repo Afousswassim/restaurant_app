@@ -6,6 +6,7 @@ import '../widgets/cart_item_tile.dart';
 import '../widgets/bottom_nav_bar.dart';
 import 'checkout_screen.dart';
 import 'home_screen.dart';
+import '../widgets/client_navbar.dart';
 import '../widgets/top_actions.dart';
 import '../widgets/app_drawer.dart';
 
@@ -33,96 +34,67 @@ class _CartScreenState extends State<CartScreen> {
     final isMobile = ResponsiveUtil.isMobile(size.width);
 
     return Scaffold(
-      endDrawer: const AppDrawer(),
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
-          onPressed: () {
-            if (Navigator.of(context).canPop()) {
-              Navigator.pop(context);
-            } else {
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (_) => const HomeScreen()),
-              );
-            }
-          },
-        ),
-        title: Text(
-          'My Cart',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: Theme.of(context).colorScheme.primary,
-          ),
-        ),
-        centerTitle: true,
-        actions: [
+      drawer: const AppDrawer(),
+      appBar: ClientNavbar(
+        title: 'My Cart',
+        extraActions: [
           Consumer<CartProvider>(
             builder: (context, cart, _) {
-              final theme = Theme.of(context);
-              return Row(
-                children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: theme.cardColor,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: theme.dividerColor, width: 1),
-                      boxShadow: [
-                        BoxShadow(
-                          color: theme.colorScheme.onSurface.withOpacity(0.08),
-                          blurRadius: 6,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: () async {
-                          if (cart.items.isEmpty) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Cart is already empty')),
-                            );
-                            return;
-                          }
-                          final confirm = await showDialog<bool>(
-                            context: context,
-                            builder: (context) => AlertDialog(
-                              title: const Text('Clear cart?'),
-                              content: const Text('Are you sure you want to remove all items?'),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context, false),
-                                  child: const Text('Cancel'),
-                                ),
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context, true),
-                                  child: const Text('Clear'),
-                                ),
-                              ],
-                            ),
+              final isDark = Theme.of(context).brightness == Brightness.dark;
+              return Tooltip(
+                message: 'Clear Cart',
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  margin: const EdgeInsets.only(right: 8),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF2A2A2A) : Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: isDark ? Colors.white10 : Colors.black.withOpacity(0.06), width: 1),
+                  ),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(12),
+                      onTap: () async {
+                        if (cart.items.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Cart is already empty')),
                           );
-                          if (confirm == true) {
-                            await cart.clearCart();
-                          }
-                        },
-                        customBorder: const CircleBorder(),
-                        child: Center(
-                          child: Icon(Icons.delete_sweep, color: theme.colorScheme.onSurface, size: 20),
-                        ),
+                          return;
+                        }
+                        final confirm = await showDialog<bool>(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: const Text('Clear cart?'),
+                            content: const Text('Are you sure you want to remove all items?'),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context, false),
+                                child: const Text('Cancel'),
+                              ),
+                              TextButton(
+                                onPressed: () => Navigator.pop(context, true),
+                                child: const Text('Clear'),
+                              ),
+                            ],
+                          ),
+                        );
+                        if (confirm == true) {
+                          await cart.clearCart();
+                        }
+                      },
+                      child: Icon(
+                        Icons.delete_outline_rounded,
+                        size: 20,
+                        color: isDark ? Colors.white70 : Colors.black87,
                       ),
                     ),
                   ),
-                  const SizedBox(width: 10),
-                ],
+                ),
               );
             },
           ),
-          const TopActions(),
-          const SizedBox(width: 16),
         ],
       ),
       body: Center(

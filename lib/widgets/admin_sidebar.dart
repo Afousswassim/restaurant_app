@@ -95,7 +95,6 @@ class AdminSidebar extends StatelessWidget {
       {'title': 'Customers', 'icon': Icons.people_outline_rounded, 'activeIcon': Icons.people_rounded},
       {'title': 'Offers', 'icon': Icons.local_offer_outlined, 'activeIcon': Icons.local_offer},
       {'title': 'QR Menu', 'icon': Icons.qr_code_scanner_outlined, 'activeIcon': Icons.qr_code_scanner},
-      {'title': 'Analytics', 'icon': Icons.analytics_outlined, 'activeIcon': Icons.analytics},
     ];
 
     return Container(
@@ -207,7 +206,7 @@ class AdminSidebar extends StatelessWidget {
                           width: 1,
                         ),
                       ),
-                      color: isDark ? const Color(0xFF1E1E2E) : Colors.white,
+                      color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
                       child: Padding(
                         padding: const EdgeInsets.all(16),
                         child: Row(
@@ -318,16 +317,6 @@ class AdminSidebar extends StatelessWidget {
                               ),
                               child: Row(
                                 children: [
-                                  // Selected Left Indicator
-                                  Container(
-                                    width: 4,
-                                    height: 16,
-                                    margin: const EdgeInsets.only(right: 8),
-                                    decoration: BoxDecoration(
-                                      color: isActive ? activeTextColor : Colors.transparent,
-                                      borderRadius: BorderRadius.circular(2),
-                                    ),
-                                  ),
                                   Icon(
                                     icon,
                                     color: isActive

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/client_provider.dart';
+import '../widgets/client_navbar.dart';
 import '../widgets/top_actions.dart';
 import '../widgets/app_drawer.dart';
 import '../widgets/bottom_nav_bar.dart';
@@ -71,22 +72,12 @@ class _ClientRegisterScreenState extends State<ClientRegisterScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
-      endDrawer: const AppDrawer(),
-      appBar: AppBar(
-        title: const Text(
-          'Register Account',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.deepOrange),
-        ),
-        centerTitle: true,
-        backgroundColor: Colors.white,
-        elevation: 0,
-        shape: Border(
-          bottom: BorderSide(color: Colors.grey.shade100),
-        ),
-        actions: const [
-          TopActions(),
-        ],
+      backgroundColor: theme.scaffoldBackgroundColor,
+      drawer: const AppDrawer(),
+      appBar: const ClientNavbar(
+        title: 'Create Account',
+        showBackButton: true,
+        showMenuButton: false,
       ),
       body: Center(
         child: SingleChildScrollView(

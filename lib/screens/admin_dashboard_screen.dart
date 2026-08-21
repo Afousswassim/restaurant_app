@@ -27,6 +27,10 @@ import '../widgets/admin_order_card.dart';
 import '../widgets/admin_chart_card.dart';
 import 'admin_customers_screen.dart';
 import 'admin_categories_screen.dart';
+import 'admin_product_details_screen.dart';
+import 'admin_qr_details_screen.dart';
+import 'admin_offer_details_screen.dart';
+import 'admin_offer_form_screen.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   static const routeName = '/admin-dashboard';
@@ -39,6 +43,7 @@ class AdminDashboardScreen extends StatefulWidget {
 
 class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   String _currentTab = 'Dashboard';
+  final List<String> _tabHistory = ['Dashboard'];
   String _searchQuery = '';
   String _offerSearchQuery = '';
   String? _updatingOrderId;
@@ -75,6 +80,31 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     setState(() {
       _searchQuery = value.trim();
     });
+  }
+
+  void _onBackPressed() {
+    final size = MediaQuery.of(context).size;
+    final isDesktop = size.width >= 1024;
+    
+    if (_tabHistory.length > 1) {
+      setState(() {
+        _tabHistory.removeLast();
+        _currentTab = _tabHistory.last;
+        _searchQuery = '';
+        _searchController.clear();
+      });
+    } else {
+      if (!isDesktop) {
+        final scaffoldState = Scaffold.maybeOf(context);
+        if (scaffoldState != null) {
+          if (scaffoldState.isDrawerOpen) {
+            scaffoldState.closeDrawer();
+          } else {
+            scaffoldState.openDrawer();
+          }
+        }
+      }
+    }
   }
 
   List<MenuItem> _uniqueProductList(List<MenuItem> items) {
@@ -137,6 +167,19 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         now.isAfter(item.offerExpiresAt!);
   }
 
+  bool _isOfferScheduled(MenuItem item) {
+    final now = DateTime.now();
+    return item.hasOffer &&
+        item.isOfferActive &&
+        item.offerStartDate != null &&
+        item.offerStartDate!.isAfter(now) &&
+        !_isOfferExpired(item);
+  }
+
+  bool _isOfferDisabled(MenuItem item) {
+    return item.hasOffer && !item.isOfferActive;
+  }
+
   List<MenuItem> _filterAdminOffers(List<MenuItem> rawItems) {
     final search = _offerSearchQuery.toLowerCase();
     return rawItems.where((item) {
@@ -148,11 +191,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
       final isActive = _isOfferCurrentlyActive(item);
       final isExpired = _isOfferExpired(item);
-      final isInactive = !isActive && !isExpired;
+      final isScheduled = _isOfferScheduled(item);
+      final isDisabled = _isOfferDisabled(item);
 
       if (_selectedOfferStatusFilter == 'Active' && !isActive) return false;
-      if (_selectedOfferStatusFilter == 'Inactive' && !isInactive) return false;
+      if (_selectedOfferStatusFilter == 'Scheduled' && !isScheduled) return false;
       if (_selectedOfferStatusFilter == 'Expired' && !isExpired) return false;
+      if (_selectedOfferStatusFilter == 'Disabled' && !isDisabled) return false;
 
       if (search.isNotEmpty) {
         final lowerName = item.name.toLowerCase();
@@ -273,26 +318,61 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         return StatefulBuilder(
           builder: (dialogContext, setDialogState) {
             return AlertDialog(
-              title: Text(editingItem == null ? 'Add Product' : 'Edit Product'),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
+              ),
+              title: Text(
+                editingItem == null ? 'Add Product' : 'Edit Product',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    // Live Image Preview Box
+                    if (imageUrlController.text.isNotEmpty)
+                      Container(
+                        height: 120,
+                        width: double.infinity,
+                        margin: const EdgeInsets.only(bottom: 16),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: Theme.of(context).dividerColor),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: Image.network(
+                            imageUrlController.text,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => const Center(
+                              child: Icon(Icons.broken_image_rounded, color: Colors.grey),
+                            ),
+                          ),
+                        ),
+                      ),
                     TextField(
                       controller: nameController,
-                      decoration: const InputDecoration(
-                        labelText: 'Product name',
+                      decoration: InputDecoration(
+                        labelText: 'Product Name',
+                        prefixIcon: const Icon(Icons.fastfood_outlined),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 12),
                     TextField(
                       controller: descriptionController,
                       maxLines: 3,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: 'Description',
+                        prefixIcon: const Icon(Icons.description_outlined),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
                       value: selectedCategory.isEmpty || !categoryOptions.contains(selectedCategory) ? null : selectedCategory,
                       items: categoryOptions
@@ -303,7 +383,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                             ),
                           )
                           .toList(),
-                      decoration: const InputDecoration(labelText: 'Category'),
+                      decoration: InputDecoration(
+                        labelText: 'Category',
+                        prefixIcon: const Icon(Icons.category_outlined),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
                       onChanged: (value) {
                         if (value != null) {
                           setDialogState(() {
@@ -312,28 +398,42 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                         }
                       },
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 12),
                     TextField(
                       controller: priceController,
                       keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: 'Price (DH)',
+                        prefixIcon: const Icon(Icons.payments_outlined),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 12),
                     TextField(
                       controller: imageUrlController,
-                      decoration: const InputDecoration(labelText: 'Image URL'),
+                      onChanged: (_) => setDialogState(() {}),
+                      decoration: InputDecoration(
+                        labelText: 'Image URL',
+                        prefixIcon: const Icon(Icons.image_outlined),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 12),
                     Row(
                       children: [
                         Expanded(
                           child: TextField(
                             controller: caloriesController,
                             keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(
-                              labelText: 'Calories',
+                            decoration: InputDecoration(
+                              labelText: 'Calories (kcal)',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
                             ),
                           ),
                         ),
@@ -342,25 +442,33 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                           child: TextField(
                             controller: proteinController,
                             keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(
-                              labelText: 'Protein',
+                            decoration: InputDecoration(
+                              labelText: 'Protein (g)',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
                             ),
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 12),
                     TextField(
                       controller: tagsController,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: 'Tags (comma separated)',
+                        prefixIcon: const Icon(Icons.label_outlined),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 12),
                     SwitchListTile(
                       contentPadding: EdgeInsets.zero,
-                      title: const Text('Available'),
+                      title: const Text('Available in Menu', style: TextStyle(fontWeight: FontWeight.bold)),
                       value: isAvailable,
+                      activeColor: Theme.of(context).colorScheme.primary,
                       onChanged: (value) =>
                           setDialogState(() => isAvailable = value),
                     ),
@@ -372,7 +480,15 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   onPressed: () => Navigator.of(dialogContext).pop(),
                   child: const Text('Cancel'),
                 ),
-                FilledButton(
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  ),
                   onPressed: () async {
                     final name = nameController.text.trim();
                     final description = descriptionController.text.trim();
@@ -921,11 +1037,15 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
     // Sidebar selection handler
     final Function(String) itemSelectedAction = (item) {
-      setState(() {
-        _currentTab = item;
-        _searchQuery = '';
-        _searchController.clear();
-      });
+      if (_currentTab != item) {
+        setState(() {
+          _tabHistory.remove(item);
+          _tabHistory.add(item);
+          _currentTab = item;
+          _searchQuery = '';
+          _searchController.clear();
+        });
+      }
       // Close drawer on mobile if open without popping the admin route stack
       if (!isDesktop) {
         Scaffold.maybeOf(context)?.closeDrawer();
@@ -934,34 +1054,141 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: isDark
-          ? const Color(0xFF121218)
-          : const Color(0xFFF7F8FA),
-      drawer: !isDesktop
-          ? Drawer(
-              child: AdminSidebar(
+    return WillPopScope(
+      onWillPop: () async {
+        _onBackPressed();
+        return false;
+      },
+      child: Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        appBar: !isDesktop
+            ? AppBar(
+                backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+                elevation: 0,
+                centerTitle: false,
+                titleSpacing: 0,
+                leading: Builder(
+                  builder: (context) => IconButton(
+                    icon: const Icon(Icons.menu_rounded, size: 28),
+                    color: Theme.of(context).colorScheme.primary,
+                    onPressed: () {
+                      Scaffold.of(context).openDrawer();
+                    },
+                  ),
+                ),
+                title: Text(
+                  _currentTab,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+                actions: [
+                  PopupMenuButton<String>(
+                    icon: Icon(
+                      Icons.more_vert_rounded,
+                      color: isDark ? Colors.white : Colors.black87,
+                    ),
+                    tooltip: 'More Actions',
+                    onSelected: (val) {
+                      if (val == 'refresh') {
+                        context.read<AdminProvider>().fetchOrders();
+                        context.read<BranchProvider>().loadBranches();
+                        context.read<MenuProvider>().loadMenu(null);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Data refreshed'),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+                      } else if (val == 'branch') {
+                        Navigator.of(context).pushNamedAndRemoveUntil('/branch-selection', (route) => false);
+                      } else if (val == 'logout') {
+                        logoutAction();
+                      } else if (val == 'drawer') {
+                        Scaffold.of(context).openDrawer();
+                      }
+                    },
+                    itemBuilder: (context) => [
+                      const PopupMenuItem(
+                        value: 'refresh',
+                        child: Row(
+                          children: [
+                            Icon(Icons.refresh_rounded, size: 20),
+                            SizedBox(width: 8),
+                            Text('Refresh Data'),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuItem(
+                        value: 'branch',
+                        child: Row(
+                          children: [
+                            Icon(Icons.storefront_rounded, size: 20),
+                            SizedBox(width: 8),
+                            Text('Change Branch'),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuItem(
+                        value: 'drawer',
+                        child: Row(
+                          children: [
+                            Icon(Icons.menu_rounded, size: 20),
+                            SizedBox(width: 8),
+                            Text('Open Navigation Drawer'),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuDivider(),
+                      const PopupMenuItem(
+                        value: 'logout',
+                        child: Row(
+                          children: [
+                            Icon(Icons.logout_rounded, size: 20, color: Colors.red),
+                            SizedBox(width: 8),
+                            Text('Logout', style: TextStyle(color: Colors.red)),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+                shape: Border(
+                  bottom: BorderSide(
+                    color: Theme.of(context).dividerColor,
+                    width: 1,
+                  ),
+                ),
+              )
+            : null,
+        drawer: !isDesktop
+            ? Drawer(
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.horizontal(right: Radius.circular(24)),
+                ),
+                child: AdminSidebar(
+                  activeItem: _currentTab,
+                  onItemSelected: itemSelectedAction,
+                  onLogout: logoutAction,
+                ),
+              )
+            : null,
+        body: Row(
+          children: [
+            // Sidebar for Desktop
+            if (isDesktop)
+              AdminSidebar(
                 activeItem: _currentTab,
                 onItemSelected: itemSelectedAction,
                 onLogout: logoutAction,
               ),
-            )
-          : null,
-      body: Row(
-        children: [
-          // Sidebar for Desktop
-          if (isDesktop)
-            AdminSidebar(
-              activeItem: _currentTab,
-              onItemSelected: itemSelectedAction,
-              onLogout: logoutAction,
-            ),
-          // Content Area
-          Expanded(
-            child: Column(
-              children: [
-                // Top Bar
-                _buildTopBar(context, adminProvider, isDesktop),
+            // Content Area
+            Expanded(
+              child: Column(
+                children: [
+                  // Top Bar
+                  if (isDesktop) _buildTopBar(context, adminProvider, isDesktop),
 
                 // Content Body
                 Expanded(
@@ -1000,8 +1227,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   // -------------------------------------------------------------------
   // Header Top Bar
@@ -1022,10 +1250,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       height: 70,
       padding: const EdgeInsets.symmetric(horizontal: 24),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E1E26) : Colors.white,
+        color: Theme.of(context).cardColor,
         border: Border(
           bottom: BorderSide(
-            color: isDark ? Colors.grey.shade900 : Colors.grey.shade100,
+            color: Theme.of(context).dividerColor,
             width: 1,
           ),
         ),
@@ -1047,12 +1275,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           Expanded(
             child: Container(
               constraints: const BoxConstraints(maxWidth: 400),
-              height: 40,
+              height: 42,
               decoration: BoxDecoration(
                 color: isDark
-                    ? const Color(0xFF121218)
-                    : const Color(0xFFF7F8FA),
-                borderRadius: BorderRadius.circular(10),
+                    ? const Color(0xFF1E1E1E)
+                    : Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(18),
               ),
               child: TextField(
                 controller: _searchController,
@@ -1070,7 +1298,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     color: isDark ? Colors.grey.shade500 : Colors.grey.shade400,
                   ),
                   border: InputBorder.none,
-                  contentPadding: const EdgeInsets.only(top: 8),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 10),
                 ),
               ),
             ),
@@ -1235,7 +1463,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       case 'Customers':
         return _buildCustomersTab(context, adminProvider);
       case 'Offers':
-        return _buildOffersTab(context, menuProvider);
+        return _buildOffersTab(context, menuProvider, branchProvider);
       case 'QR Menu':
         return _buildQRMenuTab(context, branchProvider);
       case 'Analytics':
@@ -1260,22 +1488,26 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         .toSet()
         .length;
 
+    final isDesktop = MediaQuery.of(context).size.width >= 1024;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Title banner
-        Text(
-          'Dashboard Overview',
-          style: Theme.of(
-            context,
-          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          'Hi welcome back. Wassim Food operational statistics at a glance.',
-          style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
-        ),
-        const SizedBox(height: 24),
+        if (isDesktop) ...[
+          // Title banner
+          Text(
+            'Dashboard Overview',
+            style: Theme.of(
+              context,
+            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Hi welcome back. Wassim Food operational statistics at a glance.',
+            style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+          ),
+          const SizedBox(height: 24),
+        ],
 
         // Statistics Grid
         // Statistics Grid
@@ -1380,14 +1612,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 20),
-                  const SizedBox(
-                    height: 300,
-                    child: AdminChartCard(
-                      title: 'Popular Products',
-                      child: AdminPopularProductsChart(),
-                    ),
-                  ),
                 ],
               );
             } else {
@@ -1395,7 +1619,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
-                    flex: 3,
                     child: SizedBox(
                       height: 240,
                       child: AdminChartCard(
@@ -1411,7 +1634,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   ),
                   const SizedBox(width: 16),
                   Expanded(
-                    flex: 3,
                     child: SizedBox(
                       height: 240,
                       child: AdminChartCard(
@@ -1419,17 +1641,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                         child: AdminRevenueBarChart(
                           totalRevenue: adminProvider.totalRevenue,
                         ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  const Expanded(
-                    flex: 4,
-                    child: SizedBox(
-                      height: 240,
-                      child: AdminChartCard(
-                        title: 'Popular Products',
-                        child: AdminPopularProductsChart(),
                       ),
                     ),
                   ),
@@ -1542,103 +1753,208 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Title
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Customer Orders',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    'Manage and process Wassim Food customer transactions.',
-                    style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
-                  ),
-                ],
-              ),
+        // 1. Restaurant Hero Banner Card (Attached Reference Design)
+        Container(
+          width: double.infinity,
+          height: 160,
+          clipBehavior: Clip.antiAlias,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            gradient: LinearGradient(
+              colors: [
+                primaryColor.withOpacity(0.9),
+                primaryColor.withOpacity(0.7),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: primaryColor.withOpacity(0.08),
-                borderRadius: BorderRadius.circular(10),
+            boxShadow: [
+              BoxShadow(
+                color: primaryColor.withOpacity(0.2),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
               ),
-              child: Text(
-                'Count: ${filteredOrders.length}',
-                style: TextStyle(
-                  color: primaryColor,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
+            ],
+          ),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              // Background cutlery/restaurant illustration
+              Positioned(
+                right: -20,
+                bottom: -20,
+                child: Icon(
+                  Icons.restaurant_menu_rounded,
+                  size: 180,
+                  color: Colors.white.withOpacity(0.12),
                 ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: const BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.fastfood_rounded,
+                            color: primaryColor,
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        const Text(
+                          'Wassim Food - Plaza',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        const Icon(Icons.location_on_outlined, color: Colors.white70, size: 14),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Morocco • Main Branch',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.9),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        const Icon(Icons.star_rounded, color: Color(0xFFFFC107), size: 16),
+                        const SizedBox(width: 4),
+                        Text(
+                          '4.8 (224 ratings)',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.95),
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.inventory_2_outlined, color: Colors.white, size: 13),
+                              const SizedBox(width: 5),
+                              Text(
+                                '${filteredOrders.length} Orders',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+
+        // 2. Main Online Orders Filter Button
+        Row(
+          children: [
+            ElevatedButton.icon(
+              onPressed: () {},
+              icon: const Icon(Icons.shopping_bag_outlined, size: 18),
+              label: const Text('Online Order'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: primaryColor,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               ),
             ),
           ],
         ),
         const SizedBox(height: 20),
+        const SizedBox(height: 20),
 
-        // Filter Pills
+        // 2. Status Filter Pills
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
+          physics: const BouncingScrollPhysics(),
           child: Row(
-            children: ['all', 'pending', 'preparing', 'delivering', 'delivered']
+            children: ['all', 'pending', 'preparing', 'delivering', 'delivered', 'cancelled']
                 .map((status) {
                   final isSelected = _selectedOrderStatusFilter == status;
-                  String display =
-                      status[0].toUpperCase() + status.substring(1);
+                  String display = status[0].toUpperCase() + status.substring(1);
                   if (status == 'all') display = 'All Orders';
 
                   return Padding(
                     padding: const EdgeInsets.only(right: 8),
-                    child: FilterChip(
-                      label: Text(
-                        display,
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: isSelected
-                              ? FontWeight.bold
-                              : FontWeight.normal,
-                          color: isSelected
-                              ? Colors.white
-                              : (isDark
-                                    ? Colors.grey.shade300
-                                    : Colors.grey.shade700),
-                        ),
-                      ),
+                    child: ChoiceChip(
+                      label: Text(display),
                       selected: isSelected,
                       onSelected: (selected) {
-                        setState(() {
-                          _selectedOrderStatusFilter = status;
-                        });
+                        if (selected) {
+                          setState(() {
+                            _selectedOrderStatusFilter = status;
+                          });
+                        }
                       },
-                      selectedColor: primaryColor,
-                      checkmarkColor: Colors.white,
-                      backgroundColor: isDark
-                          ? const Color(0xFF1E1E26)
-                          : Colors.white,
+                      selectedColor: primaryColor.withOpacity(0.15),
+                      checkmarkColor: primaryColor,
+                      labelStyle: TextStyle(
+                        color: isSelected
+                            ? primaryColor
+                            : (isDark ? Colors.grey.shade300 : const Color(0xFF475569)),
+                        fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                        fontSize: 12,
+                      ),
+                      showCheckmark: false,
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20),
                         side: BorderSide(
                           color: isSelected
                               ? primaryColor
-                              : (isDark
-                                    ? Colors.grey.shade800
-                                    : Colors.grey.shade200),
+                              : (isDark ? Colors.grey.shade800 : const Color(0xFFE2E8F0)),
+                          width: 1,
                         ),
                       ),
+                      backgroundColor: isDark ? const Color(0xFF1E1E26) : Colors.white,
                     ),
                   );
                 })
                 .toList(),
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 20),
 
         // List
         if (filteredOrders.isEmpty)
@@ -1678,10 +1994,15 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   // -------------------------------------------------------------------
   // Tab 3: Products View
   // -------------------------------------------------------------------
-  Widget _buildProductsTab(BuildContext context, MenuProvider menuProvider) {
+  Widget _buildProductsTab(
+    BuildContext context,
+    MenuProvider menuProvider,
+  ) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final primaryColor = theme.colorScheme.primary;
+
     final items = _filterAdminProducts(menuProvider.rawMenuItems);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = Theme.of(context).colorScheme.primary;
     final categories = <String>{'All'};
     categories.addAll(
       menuProvider.rawMenuItems
@@ -1692,149 +2013,263 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Header Section
-        LayoutBuilder(
-          builder: (context, constraints) {
-            final double buttonMaxWidth = constraints.maxWidth < 560 ? constraints.maxWidth : 180.0;
-            return Wrap(
-              alignment: WrapAlignment.spaceBetween,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              spacing: 16,
-              runSpacing: 12,
-              children: [
-                SizedBox(
-                  width: constraints.maxWidth < 560 ? constraints.maxWidth : constraints.maxWidth - buttonMaxWidth - 16.0,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Menu Products (${items.length})',
-                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Live listings available to Wassim Food clients.',
-                        style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
-                ConstrainedBox(
-                  constraints: BoxConstraints(maxWidth: buttonMaxWidth),
-                  child: FilledButton.icon(
-                    onPressed: () => _showProductDialog(context),
-                    icon: const Icon(Icons.add, size: 20),
-                    label: const Text('Add Product'),
-                    style: FilledButton.styleFrom(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                    ),
-                  ),
-                ),
+        // 1. Restaurant Hero Banner (Reference Design Header)
+        Container(
+          width: double.infinity,
+          height: 160,
+          clipBehavior: Clip.antiAlias,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            gradient: LinearGradient(
+              colors: [
+                primaryColor.withOpacity(0.9),
+                primaryColor.withOpacity(0.7),
               ],
-            );
-          },
-        ),
-        const SizedBox(height: 24),
-
-        // Filters Title
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4),
-          child: Text(
-            'FILTER BY CATEGORY',
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.bold,
-              color: isDark ? Colors.white38 : const Color(0xFF94A3B8),
-              letterSpacing: 1.0,
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
+            boxShadow: [
+              BoxShadow(
+                color: primaryColor.withOpacity(0.2),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
-        ),
-        const SizedBox(height: 10),
-
-        // Categories scrollable chips
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          physics: const BouncingScrollPhysics(),
-          child: Row(
-            children: categories.map((cat) {
-              final isSelected = _selectedProductCategory == cat;
-              return Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: ChoiceChip(
-                  label: Text(cat),
-                  selected: isSelected,
-                  onSelected: (selected) {
-                    if (selected) {
-                      setState(() {
-                        _selectedProductCategory = cat;
-                      });
-                    }
-                  },
-                  selectedColor: primaryColor.withOpacity(0.15),
-                  checkmarkColor: primaryColor,
-                  labelStyle: TextStyle(
-                    color: isSelected
-                        ? primaryColor
-                        : (isDark ? Colors.grey.shade300 : const Color(0xFF475569)),
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                    fontSize: 12,
-                  ),
-                  showCheckmark: false,
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                    side: BorderSide(
-                      color: isSelected
-                          ? primaryColor
-                          : (isDark ? Colors.grey.shade800 : const Color(0xFFE2E8F0)),
-                      width: 1,
-                    ),
-                  ),
-                  backgroundColor: isDark ? const Color(0xFF1E1E26) : Colors.white,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Positioned(
+                right: -20,
+                bottom: -20,
+                child: Icon(
+                  Icons.restaurant_menu_rounded,
+                  size: 180,
+                  color: Colors.white.withOpacity(0.12),
                 ),
-              );
-            }).toList(),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: const BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.fastfood_rounded,
+                            color: primaryColor,
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        const Text(
+                          'Wassim Food - Plaza',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        const Icon(Icons.location_on_outlined, color: Colors.white70, size: 14),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Morocco • Main Branch',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.9),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        const Icon(Icons.star_rounded, color: Color(0xFFFFC107), size: 16),
+                        const SizedBox(width: 4),
+                        Text(
+                          '4.8 (224 ratings)',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.95),
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            '${menuProvider.rawMenuItems.length} Items Total',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
         const SizedBox(height: 20),
 
-        // Status Title
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4),
-          child: Text(
-            'FILTER BY AVAILABILITY',
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.bold,
-              color: isDark ? Colors.white38 : const Color(0xFF94A3B8),
-              letterSpacing: 1.0,
-            ),
-          ),
-        ),
-        const SizedBox(height: 10),
-
-        // Status ChoiceChips
+        // 2. Search & Add Product Action Row
         Row(
           children: [
-            _buildStatusChip(context, 'All', 'All Products', isDark, primaryColor),
-            const SizedBox(width: 8),
-            _buildStatusChip(context, 'In Stock', 'In Stock', isDark, primaryColor),
-            const SizedBox(width: 8),
-            _buildStatusChip(context, 'Out of Stock', 'Out of Stock', isDark, primaryColor),
+            Expanded(
+              child: Container(
+                height: 44,
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF1E1E1E) : Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: theme.dividerColor),
+                ),
+                child: TextField(
+                  controller: _searchController,
+                  onChanged: _onSearchChanged,
+                  style: const TextStyle(fontSize: 13),
+                  decoration: InputDecoration(
+                    hintText: 'Search menu items...',
+                    hintStyle: TextStyle(
+                      fontSize: 13,
+                      color: isDark ? Colors.grey.shade500 : Colors.grey.shade400,
+                    ),
+                    prefixIcon: Icon(
+                      Icons.search_rounded,
+                      size: 18,
+                      color: isDark ? Colors.grey.shade500 : Colors.grey.shade400,
+                    ),
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 11),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            SizedBox(
+              height: 44,
+              child: ElevatedButton.icon(
+                onPressed: () => _showProductDialog(context),
+                icon: const Icon(Icons.add_rounded, size: 18),
+                label: const Text('Add Product'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: primaryColor,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                ),
+              ),
+            ),
           ],
+        ),
+        const SizedBox(height: 20),
+
+        // 3. Category Horizontal Scrolling Tabs (Reference Layout)
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(left: 4, bottom: 8),
+              child: Text(
+                'Menu Items',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: theme.colorScheme.onSurface,
+                ),
+              ),
+            ),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              child: Row(
+                children: categories.map((cat) {
+                  final isSelected = _selectedProductCategory == cat;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 12),
+                    child: GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _selectedProductCategory = cat;
+                        });
+                      },
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+                            child: Text(
+                              cat,
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                                color: isSelected
+                                    ? primaryColor
+                                    : (isDark ? Colors.grey.shade400 : Colors.grey.shade600),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Container(
+                            height: 3,
+                            width: 24,
+                            decoration: BoxDecoration(
+                              color: isSelected ? primaryColor : Colors.transparent,
+                              borderRadius: BorderRadius.circular(3),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+
+        // 4. Quick Availability & Type Filter Pills (Reference Layout: Veg / Non-Veg / Stock)
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          physics: const BouncingScrollPhysics(),
+          child: Row(
+            children: [
+              _buildFilterPill(context, 'All', 'All', isDark, primaryColor),
+              const SizedBox(width: 8),
+              _buildFilterPill(context, 'In Stock', 'In Stock 🟢', isDark, primaryColor),
+              const SizedBox(width: 8),
+              _buildFilterPill(context, 'Out of Stock', 'Out of Stock 🔴', isDark, primaryColor),
+            ],
+          ),
         ),
         const SizedBox(height: 24),
 
-        // Product Grid List
+        // 5. Product List / Grid (Reference Layout: Crisp cards with image left + title, info, price in DH, buttons)
         if (items.isEmpty)
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 60),
@@ -1849,7 +2284,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'No products found matching the criteria.',
+                    'No products found in this category.',
                     style: TextStyle(
                       fontSize: 14,
                       color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
@@ -1861,232 +2296,210 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             ),
           )
         else
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final double maxWidth = constraints.maxWidth;
-              int crossAxisCount = 1;
-              if (maxWidth < 600) {
-                crossAxisCount = 2;
-              } else if (maxWidth < 960) {
-                crossAxisCount = 3;
-              } else if (maxWidth < 1300) {
-                crossAxisCount = 4;
-              } else {
-                crossAxisCount = 5;
-              }
-
-              final double spacing = 16.0;
-              final double itemWidth = (maxWidth - (spacing * (crossAxisCount - 1))) / crossAxisCount;
-
-              return Wrap(
-                spacing: spacing,
-                runSpacing: spacing,
-                children: List.generate(items.length, (index) {
-                  final product = items[index];
-                  return SizedBox(
-                    width: itemWidth,
-                    child: Card(
-                      elevation: 0,
-                      margin: EdgeInsets.zero,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(24),
-                        side: BorderSide(
-                          color: isDark ? Colors.grey.shade900 : const Color(0xFFF1F5F9),
-                          width: 1.5,
+          ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: items.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 14),
+            itemBuilder: (context, index) {
+              final product = items[index];
+              return Card(
+                elevation: 0,
+                margin: EdgeInsets.zero,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                  side: BorderSide(color: theme.dividerColor),
+                ),
+                color: theme.cardColor,
+                clipBehavior: Clip.antiAlias,
+                child: InkWell(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => AdminProductDetailsScreen(
+                          product: product,
+                          onEdit: (p) => _showProductDialog(context, editingItem: p),
+                          onDelete: (p) => _confirmDeleteProduct(context, p),
+                          onToggleAvailability: (p, avail) async {
+                            await ApiService.updateMenuItem(
+                              id: p.id,
+                              name: p.name,
+                              description: p.description,
+                              price: p.price,
+                              imageUrl: p.imageUrl,
+                              category: p.category,
+                              isAvailable: avail,
+                            );
+                            await context.read<MenuProvider>().loadMenu(null);
+                          },
                         ),
                       ),
-                      color: isDark ? const Color(0xFF1E1E26) : Colors.white,
-                      clipBehavior: Clip.antiAlias,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          // Product Image + Status Floating Badge
-                          Stack(
+                    );
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.all(14.0),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Product Image Thumbnail (Square Rounded)
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: SizedBox(
+                            width: 90,
+                            height: 90,
+                            child: product.imageUrl.isNotEmpty
+                                ? Image.network(
+                                    product.imageUrl,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, __, ___) => Container(
+                                      color: primaryColor.withOpacity(0.1),
+                                      child: Icon(Icons.fastfood, size: 36, color: primaryColor),
+                                    ),
+                                  )
+                                : Container(
+                                    color: primaryColor.withOpacity(0.1),
+                                    child: Icon(Icons.fastfood, size: 36, color: primaryColor),
+                                  ),
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+
+                        // Info Column
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              AspectRatio(
-                                aspectRatio: 16 / 11,
-                                child: product.imageUrl.isNotEmpty
-                                    ? Image.network(
-                                        product.imageUrl,
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (_, __, ___) => Container(
-                                          color: isDark ? Colors.grey.shade900 : Colors.grey.shade100,
-                                          child: Icon(
-                                            Icons.fastfood_outlined,
-                                            color: Colors.grey.shade400,
-                                            size: 40,
-                                          ),
-                                        ),
-                                      )
-                                    : Container(
-                                        color: isDark ? Colors.grey.shade900 : Colors.grey.shade100,
-                                        child: Icon(
-                                          Icons.fastfood_outlined,
-                                          color: Colors.grey.shade400,
-                                          size: 40,
-                                        ),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      product.name,
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.bold,
+                                        color: theme.colorScheme.onSurface,
                                       ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: (product.isAvailable ? Colors.green : Colors.red).withOpacity(0.12),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      product.isAvailable ? 'In Stock' : 'Out of Stock',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                        color: product.isAvailable ? Colors.green : Colors.red,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
-                              Positioned(
-                                top: 12,
-                                right: 12,
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                                  decoration: BoxDecoration(
-                                    color: (product.isAvailable ? Colors.green : Colors.red).withOpacity(0.9),
-                                    borderRadius: BorderRadius.circular(20),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withOpacity(0.1),
-                                        blurRadius: 4,
-                                        offset: const Offset(0, 2),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Container(
-                                        width: 6,
-                                        height: 6,
-                                        decoration: const BoxDecoration(
-                                          color: Colors.white,
-                                          shape: BoxShape.circle,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        product.isAvailable ? 'In Stock' : 'Out of Stock',
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                              const SizedBox(height: 4),
+                              Text(
+                                product.description.isNotEmpty
+                                    ? product.description
+                                    : 'Fresh loaded Wassim Food special recipe.',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                                  height: 1.25,
                                 ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    CurrencyFormatter.formatDH(product.effectivePrice),
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w900,
+                                      color: primaryColor,
+                                    ),
+                                  ),
+                                  Row(
+                                    children: [
+                                      IconButton(
+                                        onPressed: () => _showProductDialog(context, editingItem: product),
+                                        icon: const Icon(Icons.edit_outlined, size: 18),
+                                        padding: EdgeInsets.zero,
+                                        constraints: const BoxConstraints(),
+                                        tooltip: 'Edit Product',
+                                      ),
+                                      const SizedBox(width: 12),
+                                      IconButton(
+                                        onPressed: () => _confirmDeleteProduct(context, product),
+                                        icon: const Icon(Icons.delete_outline, size: 18, color: Colors.red),
+                                        padding: EdgeInsets.zero,
+                                        constraints: const BoxConstraints(),
+                                        tooltip: 'Delete Product',
+                                      ),
+                                    ],
+                                  ),
+                                ],
                               ),
                             ],
                           ),
-
-                          // Product Info
-                          Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  product.category.toUpperCase(),
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    color: primaryColor,
-                                    fontWeight: FontWeight.w900,
-                                    letterSpacing: 1.0,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                const SizedBox(height: 6),
-                                Text(
-                                  product.name,
-                                  style: TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.bold,
-                                    color: isDark ? Colors.white : const Color(0xFF1E293B),
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  product.description,
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
-                                    height: 1.3,
-                                  ),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                const SizedBox(height: 14),
-                                Divider(
-                                  height: 1,
-                                  color: isDark ? Colors.grey.shade800 : const Color(0xFFF1F5F9),
-                                ),
-                                const SizedBox(height: 12),
-
-                                // Price & Action Buttons
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      CurrencyFormatter.formatDH(product.price),
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w900,
-                                        color: isDark ? Colors.white : const Color(0xFF1E293B),
-                                      ),
-                                    ),
-                                    Row(
-                                      children: [
-                                        Container(
-                                          width: 32,
-                                          height: 32,
-                                          decoration: BoxDecoration(
-                                            color: isDark ? Colors.white.withOpacity(0.08) : const Color(0xFFF1F5F9),
-                                            shape: BoxShape.circle,
-                                          ),
-                                          child: IconButton(
-                                            onPressed: () => _showProductDialog(
-                                              context,
-                                              editingItem: product,
-                                            ),
-                                            icon: Icon(
-                                              Icons.edit_outlined,
-                                              size: 15,
-                                              color: isDark ? Colors.white70 : const Color(0xFF475569),
-                                            ),
-                                            tooltip: 'Edit',
-                                            padding: EdgeInsets.zero,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Container(
-                                          width: 32,
-                                          height: 32,
-                                          decoration: BoxDecoration(
-                                            color: isDark ? Colors.redAccent.withOpacity(0.12) : const Color(0xFFFFEBEE),
-                                            shape: BoxShape.circle,
-                                          ),
-                                          child: IconButton(
-                                            onPressed: () => _confirmDeleteProduct(context, product),
-                                            icon: Icon(
-                                              Icons.delete_outline,
-                                              size: 15,
-                                              color: isDark ? Colors.redAccent : Colors.red,
-                                            ),
-                                            tooltip: 'Delete',
-                                            padding: EdgeInsets.zero,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                  );
-                }),
+                  ),
+                ),
               );
             },
           ),
       ],
+    );
+  }
+
+  Widget _buildFilterPill(
+    BuildContext context,
+    String value,
+    String label,
+    bool isDark,
+    Color primaryColor,
+  ) {
+    final isSelected = _selectedProductStatus == value;
+    return ChoiceChip(
+      label: Text(label),
+      selected: isSelected,
+      onSelected: (selected) {
+        if (selected) {
+          setState(() {
+            _selectedProductStatus = value;
+          });
+        }
+      },
+      selectedColor: primaryColor.withOpacity(0.15),
+      checkmarkColor: primaryColor,
+      labelStyle: TextStyle(
+        color: isSelected
+            ? primaryColor
+            : (isDark ? Colors.grey.shade300 : const Color(0xFF475569)),
+        fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+        fontSize: 12,
+      ),
+      showCheckmark: false,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(
+          color: isSelected
+              ? primaryColor
+              : (isDark ? Colors.grey.shade800 : const Color(0xFFE2E8F0)),
+          width: 1,
+        ),
+      ),
+      backgroundColor: isDark ? const Color(0xFF1E1E26) : Colors.white,
     );
   }
 
@@ -2144,8 +2557,15 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   // -------------------------------------------------------------------
   // Tab 6: Offers View
   // -------------------------------------------------------------------
-  Widget _buildOffersTab(BuildContext context, MenuProvider menuProvider) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+  Widget _buildOffersTab(
+    BuildContext context,
+    MenuProvider menuProvider,
+    BranchProvider branchProvider,
+  ) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final primaryColor = theme.colorScheme.primary;
+
     final allOffers = menuProvider.rawMenuItems
         .where((item) => item.hasOffer)
         .toList();
@@ -2159,606 +2579,1073 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
     final totalActive = allOffers.where(_isOfferCurrentlyActive).length;
     final totalExpired = allOffers.where(_isOfferExpired).length;
-    final totalInactive = allOffers.length - totalActive - totalExpired;
+    final totalScheduled = allOffers.where(_isOfferScheduled).length;
+    final totalDisabled = allOffers.where(_isOfferDisabled).length;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // 1. Premium Hero Header Banner
+        Container(
+          width: double.infinity,
+          height: 160,
+          clipBehavior: Clip.antiAlias,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            gradient: LinearGradient(
+              colors: [
+                primaryColor.withValues(alpha: 0.9),
+                primaryColor.withValues(alpha: 0.7),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: primaryColor.withValues(alpha: 0.2),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Positioned(
+                right: -20,
+                bottom: -20,
+                child: Icon(
+                  Icons.local_offer_rounded,
+                  size: 180,
+                  color: Colors.white.withValues(alpha: 0.12),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: const BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.local_offer_rounded,
+                            color: primaryColor,
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        const Text(
+                          'Wassim Food Offers',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        const Icon(Icons.location_on_outlined, color: Colors.white70, size: 14),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${branchProvider.selectedBranch?.name ?? "Maarif Branch"} • ${branchProvider.selectedBranch?.city.isNotEmpty == true ? branchProvider.selectedBranch!.city : "Casablanca"}',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.9),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        const Icon(Icons.discount_rounded, color: Color(0xFFFFC107), size: 16),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${allOffers.length} Total Offers',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.95),
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            '$totalActive Active • $totalScheduled Scheduled • $totalExpired Expired',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+
+        // 2. Search & Add Offer Action Row
         Row(
           children: [
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Offers Management',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
+              child: Container(
+                height: 44,
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF1E1E1E) : Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: theme.dividerColor),
+                ),
+                child: TextField(
+                  controller: _offerSearchController,
+                  onChanged: (val) => setState(() => _offerSearchQuery = val.trim()),
+                  style: const TextStyle(fontSize: 13),
+                  decoration: InputDecoration(
+                    hintText: 'Search offers by title, product, category...',
+                    hintStyle: TextStyle(
+                      fontSize: 13,
+                      color: isDark ? Colors.grey.shade500 : Colors.grey.shade400,
                     ),
+                    prefixIcon: Icon(
+                      Icons.search_rounded,
+                      size: 18,
+                      color: isDark ? Colors.grey.shade500 : Colors.grey.shade400,
+                    ),
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 11),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Manage product offers attached to existing menu items.',
-                    style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
-                  ),
-                ],
+                ),
               ),
             ),
-            FilledButton.icon(
-              onPressed: () => _showOfferDialog(context),
-              icon: const Icon(Icons.add_circle_outline),
-              label: const Text('Add Offer'),
-            ),
-          ],
-        ),
-        const SizedBox(height: 20),
-        Wrap(
-          spacing: 12,
-          runSpacing: 12,
-          children: [
-            _buildOfferStatusChip(
-              'All',
-              allOffers.length,
-              _selectedOfferStatusFilter == 'All',
-              () {
-                setState(() => _selectedOfferStatusFilter = 'All');
-              },
-            ),
-            _buildOfferStatusChip(
-              'Active',
-              totalActive,
-              _selectedOfferStatusFilter == 'Active',
-              () {
-                setState(() => _selectedOfferStatusFilter = 'Active');
-              },
-            ),
-            _buildOfferStatusChip(
-              'Inactive',
-              totalInactive,
-              _selectedOfferStatusFilter == 'Inactive',
-              () {
-                setState(() => _selectedOfferStatusFilter = 'Inactive');
-              },
-            ),
-            _buildOfferStatusChip(
-              'Expired',
-              totalExpired,
-              _selectedOfferStatusFilter == 'Expired',
-              () {
-                setState(() => _selectedOfferStatusFilter = 'Expired');
-              },
+            const SizedBox(width: 12),
+            SizedBox(
+              height: 44,
+              child: ElevatedButton.icon(
+                onPressed: () async {
+                  await Navigator.push<bool>(
+                    context,
+                    MaterialPageRoute(builder: (_) => const AdminOfferFormScreen()),
+                  );
+                },
+                icon: const Icon(Icons.add_rounded, size: 18),
+                label: const Text('Add Offer'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: primaryColor,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                ),
+              ),
             ),
           ],
         ),
         const SizedBox(height: 16),
-        const SizedBox(height: 16),
-        LayoutBuilder(
-          builder: (context, constraints) {
-            final isMobile = constraints.maxWidth < 600;
-            if (isMobile) {
-              return Column(
-                children: [
-                  TextField(
-                    controller: _offerSearchController,
-                    decoration: InputDecoration(
-                      hintText:
-                          'Search offers by product, category, title, or label',
-                      prefixIcon: const Icon(Icons.search),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      isDense: true,
-                    ),
-                    onChanged: (value) {
-                      setState(() {
-                        _offerSearchQuery = value.trim();
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  DropdownButtonFormField<String>(
-                    value: _selectedOfferCategory,
-                    decoration: InputDecoration(
-                      labelText: 'Category',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      isDense: true,
-                    ),
-                    items: categories
-                        .map(
-                          (category) => DropdownMenuItem(
-                            value: category,
-                            child: Text(category),
-                          ),
-                        )
-                        .toList(),
-                    onChanged: (value) {
-                      if (value != null) {
-                        setState(() {
-                          _selectedOfferCategory = value;
-                        });
-                      }
-                    },
-                  ),
-                ],
-              );
-            }
-            return Row(
-              children: [
-                Expanded(
-                  flex: 3,
-                  child: TextField(
-                    controller: _offerSearchController,
-                    decoration: InputDecoration(
-                      hintText:
-                          'Search offers by product, category, title, or label',
-                      prefixIcon: const Icon(Icons.search),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      isDense: true,
-                    ),
-                    onChanged: (value) {
-                      setState(() {
-                        _offerSearchQuery = value.trim();
-                      });
-                    },
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  flex: 1,
-                  child: DropdownButtonFormField<String>(
-                    value: _selectedOfferCategory,
-                    decoration: InputDecoration(
-                      labelText: 'Category',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      isDense: true,
-                    ),
-                    items: categories
-                        .map(
-                          (category) => DropdownMenuItem(
-                            value: category,
-                            child: Text(category),
-                          ),
-                        )
-                        .toList(),
-                    onChanged: (value) {
-                      if (value != null) {
-                        setState(() {
-                          _selectedOfferCategory = value;
-                        });
-                      }
-                    },
-                  ),
-                ),
-              ],
-            );
-          },
-        ),
-        const SizedBox(height: 20),
 
-        if (menuProvider.isLoading)
-          const Center(
-            child: Padding(
-              padding: EdgeInsets.symmetric(vertical: 40),
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.deepOrange),
-              ),
-            ),
-          )
-        else if (offers.isEmpty)
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 48),
-            child: Center(child: Text('No offers found.')),
-          )
-        else
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: offers.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 12),
-            itemBuilder: (context, index) {
-              final offer = offers[index];
-              final active = _isOfferCurrentlyActive(offer);
-              final expired = _isOfferExpired(offer);
-              final statusLabel = expired
-                  ? 'Expired'
-                  : active
-                  ? 'Active'
-                  : 'Inactive';
-
-              return Container(
-                padding: const EdgeInsets.all(16),
+        // 3. Status Filter Chips (All, Active, Scheduled, Expired, Disabled)
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          physics: const BouncingScrollPhysics(),
+          child: Row(
+            children: [
+              _buildModernOfferStatusChip('All', allOffers.length, isDark, primaryColor),
+              const SizedBox(width: 8),
+              _buildModernOfferStatusChip('Active', totalActive, isDark, Colors.green),
+              const SizedBox(width: 8),
+              _buildModernOfferStatusChip('Scheduled', totalScheduled, isDark, Colors.orange),
+              const SizedBox(width: 8),
+              _buildModernOfferStatusChip('Expired', totalExpired, isDark, Colors.red),
+              const SizedBox(width: 8),
+              _buildModernOfferStatusChip('Disabled', totalDisabled, isDark, Colors.grey),
+              const SizedBox(width: 12),
+              // Category Filter Dropdown Pill
+              Container(
+                height: 34,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
                 decoration: BoxDecoration(
                   color: isDark ? const Color(0xFF1E1E26) : Colors.white,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: isDark ? Colors.grey.shade900 : Colors.grey.shade200,
+                    color: isDark ? Colors.grey.shade800 : const Color(0xFFE2E8F0),
                   ),
                 ),
-                child: Row(
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
-                      child: Container(
-                        width: 110,
-                        height: 110,
-                        color: Colors.grey.shade100,
-                        child: offer.imageUrl.isNotEmpty
-                            ? Image.network(offer.imageUrl, fit: BoxFit.cover)
-                            : const Icon(
-                                Icons.fastfood,
-                                color: Colors.grey,
-                                size: 42,
-                              ),
-                      ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: _selectedOfferCategory,
+                    icon: const Icon(Icons.category_outlined, size: 16),
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.grey.shade300 : const Color(0xFF475569),
                     ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  offer.name,
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              GestureDetector(
-                                onTap: () => _showOfferDialog(
-                                  context,
-                                  editingOffer: offer,
-                                ),
-                                child: const Icon(Icons.edit, size: 20),
-                              ),
-                              const SizedBox(width: 12),
-                              GestureDetector(
-                                onTap: () =>
-                                    _confirmDeleteOffer(context, offer),
-                                child: const Icon(
-                                  Icons.delete_outline,
-                                  size: 20,
-                                  color: Colors.redAccent,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            offer.category,
-                            style: TextStyle(
-                              color: Colors.grey.shade600,
-                              fontSize: 12,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            offer.offerTitle ?? '',
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            offer.offerDescription ?? '',
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: Colors.grey.shade600,
-                              fontSize: 12,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          Row(
-                            children: [
-                              if (offer.oldPrice != null)
-                                Text(
-                                  CurrencyFormatter.formatDH(offer.oldPrice!),
-                                  style: const TextStyle(
-                                    decoration: TextDecoration.lineThrough,
-                                    color: Colors.grey,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              if (offer.oldPrice != null)
-                                const SizedBox(width: 8),
-                              Text(
-                                CurrencyFormatter.formatDH(
-                                  offer.offerPrice ?? offer.effectivePrice,
-                                ),
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                  color: Colors.deepOrange,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 10),
-                          Wrap(
-                            spacing: 12,
-                            runSpacing: 8,
-                            crossAxisAlignment: WrapCrossAlignment.center,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: active
-                                      ? Colors.green.withOpacity(0.12)
-                                      : Colors.grey.withOpacity(0.12),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  statusLabel,
-                                  style: TextStyle(
-                                    color: active
-                                        ? Colors.green.shade700
-                                        : Colors.grey.shade700,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                              Text(
-                                'Start ${_formatSimpleDate(offer.offerStartDate)}',
-                                style: TextStyle(
-                                  color: Colors.grey.shade600,
-                                  fontSize: 11,
-                                ),
-                              ),
-                              Text(
-                                'Expires ${_formatSimpleDate(offer.offerExpiresAt)}',
-                                style: TextStyle(
-                                  color: Colors.grey.shade600,
-                                  fontSize: 11,
-                                ),
-                              ),
-                              Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    offer.offerLabel ?? 'OFFER',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 11,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Transform.scale(
-                                    scale: 0.8,
-                                    child: Switch.adaptive(
-                                      value:
-                                          _pendingOfferToggle[offer.id] ??
-                                          offer.isOfferActive,
-                                      onChanged: (value) =>
-                                          _toggleOfferActive(context, offer, value),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                    items: categories
+                        .map((c) => DropdownMenuItem(value: c, child: Text(c == 'All' ? 'All Categories' : c)))
+                        .toList(),
+                    onChanged: (val) {
+                      if (val != null) setState(() => _selectedOfferCategory = val);
+                    },
+                  ),
                 ),
-              );
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+
+        // 4. Offers List / Grid
+        if (menuProvider.isLoading)
+          const Center(
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: 60),
+              child: CircularProgressIndicator(),
+            ),
+          )
+        else if (offers.isEmpty)
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 60),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.local_offer_outlined,
+                    size: 48,
+                    color: isDark ? Colors.grey.shade700 : Colors.grey.shade300,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'No offers found matching criteria.',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          )
+        else
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final double width = constraints.maxWidth;
+              if (width < 700) {
+                // Mobile single column list
+                return ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: offers.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 14),
+                  itemBuilder: (context, index) {
+                    return _buildModernOfferCard(context, offers[index], isDark, primaryColor, theme);
+                  },
+                );
+              } else {
+                // Tablet / Desktop Grid
+                int columns = (width / 420).floor().clamp(2, 3);
+                final spacing = 16.0;
+                final itemWidth = (width - (spacing * (columns - 1))) / columns;
+
+                return Wrap(
+                  spacing: spacing,
+                  runSpacing: spacing,
+                  children: offers.map((offer) {
+                    return SizedBox(
+                      width: itemWidth,
+                      child: _buildModernOfferCard(context, offer, isDark, primaryColor, theme),
+                    );
+                  }).toList(),
+                );
+              }
             },
           ),
       ],
     );
   }
 
+  Widget _buildModernOfferStatusChip(
+    String filterValue,
+    int count,
+    bool isDark,
+    Color activeColor,
+  ) {
+    final isSelected = _selectedOfferStatusFilter == filterValue;
+    return ChoiceChip(
+      label: Text('$filterValue ($count)'),
+      selected: isSelected,
+      onSelected: (selected) {
+        if (selected) {
+          setState(() => _selectedOfferStatusFilter = filterValue);
+        }
+      },
+      selectedColor: activeColor.withValues(alpha: 0.15),
+      checkmarkColor: activeColor,
+      labelStyle: TextStyle(
+        color: isSelected ? activeColor : (isDark ? Colors.grey.shade300 : const Color(0xFF475569)),
+        fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+        fontSize: 12,
+      ),
+      showCheckmark: false,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(
+          color: isSelected ? activeColor : (isDark ? Colors.grey.shade800 : const Color(0xFFE2E8F0)),
+          width: 1,
+        ),
+      ),
+      backgroundColor: isDark ? const Color(0xFF1E1E26) : Colors.white,
+    );
+  }
+
+  Widget _buildModernOfferCard(
+    BuildContext context,
+    MenuItem offer,
+    bool isDark,
+    Color primaryColor,
+    ThemeData theme,
+  ) {
+    final isExpired = _isOfferExpired(offer);
+    final isScheduled = _isOfferScheduled(offer);
+    final isActive = _isOfferCurrentlyActive(offer);
+
+    String statusLabel = 'Disabled';
+    Color statusColor = Colors.grey;
+
+    if (!offer.isOfferActive) {
+      statusLabel = 'Disabled';
+      statusColor = Colors.grey;
+    } else if (isExpired) {
+      statusLabel = 'Expired';
+      statusColor = Colors.red;
+    } else if (isScheduled) {
+      statusLabel = 'Scheduled';
+      statusColor = Colors.orange;
+    } else if (isActive) {
+      statusLabel = 'Active';
+      statusColor = Colors.green;
+    }
+
+    final oldP = offer.oldPrice ?? 0;
+    final newP = offer.offerPrice ?? offer.effectivePrice;
+    int discountPercent = 0;
+    if (oldP > 0 && newP < oldP) {
+      discountPercent = (((oldP - newP) / oldP) * 100).round();
+    }
+
+    return Card(
+      elevation: 0,
+      margin: EdgeInsets.zero,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(color: theme.dividerColor),
+      ),
+      color: theme.cardColor,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => AdminOfferDetailsScreen(offer: offer),
+            ),
+          );
+        },
+        borderRadius: BorderRadius.circular(20),
+        child: Padding(
+          padding: const EdgeInsets.all(14.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Top Row: Image Thumbnail + Details + Top Right Edit/Delete
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Square Rounded Image (90x90)
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: SizedBox(
+                      width: 90,
+                      height: 90,
+                      child: offer.imageUrl.isNotEmpty
+                          ? Image.network(
+                              offer.imageUrl,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Container(
+                                color: primaryColor.withValues(alpha: 0.1),
+                                child: Icon(Icons.fastfood, size: 36, color: primaryColor),
+                              ),
+                            )
+                          : Container(
+                              color: primaryColor.withValues(alpha: 0.1),
+                              child: Icon(Icons.fastfood, size: 36, color: primaryColor),
+                            ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // Details
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                offer.name,
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                  color: theme.colorScheme.onSurface,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.edit_outlined, size: 18),
+                              color: Colors.blue.shade600,
+                              constraints: const BoxConstraints(),
+                              padding: const EdgeInsets.all(4),
+                              tooltip: 'Edit Offer',
+                              onPressed: () async {
+                                await Navigator.push<bool>(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => AdminOfferFormScreen(editingOffer: offer),
+                                  ),
+                                );
+                              },
+                            ),
+                            const SizedBox(width: 4),
+                            IconButton(
+                              icon: const Icon(Icons.delete_outline, size: 18),
+                              color: Colors.red.shade600,
+                              constraints: const BoxConstraints(),
+                              padding: const EdgeInsets.all(4),
+                              tooltip: 'Delete Offer',
+                              onPressed: () => _confirmDeleteOffer(context, offer),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 2),
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: primaryColor.withValues(alpha: 0.08),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                offer.category,
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: primaryColor,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            // Status Badge
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: statusColor.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                statusLabel,
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: statusColor,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        // Offer Title or description snippet
+                        Text(
+                          offer.offerTitle?.isNotEmpty == true
+                              ? offer.offerTitle!
+                              : (offer.offerDescription?.isNotEmpty == true ? offer.offerDescription! : 'Special Promotional Offer'),
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? Colors.grey.shade300 : Colors.grey.shade700,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              // Price Row with Strikethrough Old Price, New Price, and Discount Badge
+              Row(
+                children: [
+                  if (oldP > 0) ...[
+                    Text(
+                      CurrencyFormatter.formatDH(oldP),
+                      style: const TextStyle(
+                        decoration: TextDecoration.lineThrough,
+                        color: Colors.grey,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                  Text(
+                    CurrencyFormatter.formatDH(newP),
+                    style: TextStyle(
+                      fontWeight: FontWeight.w900,
+                      fontSize: 17,
+                      color: primaryColor,
+                    ),
+                  ),
+                  const Spacer(),
+                  if (discountPercent > 0)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        '$discountPercent% OFF',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.red,
+                        ),
+                      ),
+                    )
+                  else if (offer.offerLabel?.isNotEmpty == true)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: primaryColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        offer.offerLabel!,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: primaryColor,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Divider(height: 1, thickness: 1, color: theme.dividerColor),
+              const SizedBox(height: 8),
+              // Bottom Row: Dates + Modern Active Switch
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Start: ${_formatSimpleDate(offer.offerStartDate)}',
+                        style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+                      ),
+                      Text(
+                        'Expires: ${_formatSimpleDate(offer.offerExpiresAt)}',
+                        style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+                      ),
+                    ],
+                  ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        _pendingOfferToggle[offer.id] ?? offer.isOfferActive ? 'ON' : 'OFF',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: _pendingOfferToggle[offer.id] ?? offer.isOfferActive ? Colors.green : Colors.grey,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Transform.scale(
+                        scale: 0.8,
+                        child: Switch.adaptive(
+                          value: _pendingOfferToggle[offer.id] ?? offer.isOfferActive,
+                          activeColor: primaryColor,
+                          onChanged: (value) => _toggleOfferActive(context, offer, value),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // -------------------------------------------------------------------
+  // Tab 7: QR Menu View
+  // -------------------------------------------------------------------
   // -------------------------------------------------------------------
   // Tab 7: QR Menu View
   // -------------------------------------------------------------------
   Widget _buildQRMenuTab(BuildContext context, BranchProvider branchProvider) {
     final branches = branchProvider.branches;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = Theme.of(context).colorScheme.primary;
+    final primaryColor = const Color(0xFF8D4B38);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'QR Menus Manager',
-          style: Theme.of(
-            context,
-          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          'Generate and print dine-in QR menus for Wassim Food branches.',
-          style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
-        ),
-        const SizedBox(height: 24),
-
-        if (branches.isEmpty)
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 48),
-            child: Center(child: Text('No branches available.')),
-          )
-        else
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final double maxWidth = constraints.maxWidth;
-              int crossAxisCount = (maxWidth / 400).ceil();
-              if (crossAxisCount < 1) crossAxisCount = 1;
-              
-              final double spacing = 16.0;
-              final double itemWidth = (maxWidth - (spacing * (crossAxisCount - 1))) / crossAxisCount;
-
-              return Wrap(
-                spacing: spacing,
-                runSpacing: spacing,
-                children: List.generate(branches.length, (index) {
-                  final branch = branches[index];
-                  // Use the new branch.qrUrl from backend, fallback to manual if empty
-                  final qrLink = branch.qrUrl.isNotEmpty 
-                      ? branch.qrUrl 
-                      : 'https://wassimfood.com/menu/${branch.slug}';
-
-                  return SizedBox(
-                    width: itemWidth,
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF1E1E26) : Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: isDark ? Colors.grey.shade900 : Colors.grey.shade100,
-                        ),
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Premium Hero Card
+          Container(
+            width: double.infinity,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF8D4B38), Color(0xFF6E392A)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF6E392A).withOpacity(0.3),
+                  blurRadius: 18,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Stack(
+              children: [
+                // Translucent background illustration of cutlery/QR
+                Positioned(
+                  right: -24,
+                  bottom: -24,
+                  child: Opacity(
+                    opacity: 0.12,
+                    child: Transform.rotate(
+                      angle: -0.25,
+                      child: const Icon(
+                        Icons.restaurant_menu_rounded,
+                        size: 200,
+                        color: Colors.white,
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 18.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
                         children: [
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: Colors.deepOrange.withOpacity(0.08),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: const Icon(
-                                  Icons.storefront_rounded,
-                                  color: Colors.deepOrange,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      branch.name,
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 16,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      branch.address,
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.grey.shade500,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
+                          // Wassim Food Logo avatar (NOT McDonald's)
+                          Container(
+                            width: 52,
+                            height: 52,
+                            decoration: const BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.fastfood_rounded,
+                              color: Color(0xFF8D4B38),
+                              size: 28,
+                            ),
                           ),
-                          const SizedBox(height: 12),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Time: ${branch.deliveryTime}',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.grey.shade600,
-                                    ),
-                                  ),
-                                  Text(
-                                    'Fee: ${CurrencyFormatter.formatDH(branch.deliveryFee)}',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.grey.shade600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          // Action Buttons
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              IconButton(
-                                onPressed: () async {
-                                  await Clipboard.setData(ClipboardData(text: qrLink));
-                                  if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text('Menu URL copied to clipboard'), backgroundColor: Colors.green),
-                                    );
-                                  }
-                                },
-                                icon: const Icon(Icons.copy_rounded, size: 18),
-                                tooltip: 'Copy Link',
-                                color: Colors.grey.shade600,
-                              ),
-                              IconButton(
-                                onPressed: () => _printQR(context, branch, qrLink),
-                                icon: const Icon(Icons.print_rounded, size: 18),
-                                tooltip: 'Print QR',
-                                color: Colors.grey.shade600,
-                              ),
-                              IconButton(
-                                onPressed: () => _downloadQR(context, branch, qrLink),
-                                icon: const Icon(Icons.download_rounded, size: 18),
-                                tooltip: 'Download PNG',
-                                color: Colors.grey.shade600,
-                              ),
-                              const SizedBox(width: 8),
-                              ElevatedButton.icon(
-                                onPressed: () =>
-                                    _showPrintQRDialog(context, branch, qrLink),
-                                icon: const Icon(Icons.qr_code, size: 16),
-                                label: const Text('Show QR'),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: primaryColor,
-                                  foregroundColor: Colors.white,
-                                  elevation: 0,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 12,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Wassim Food QR Menu',
+                                  style: TextStyle(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                    letterSpacing: 0.3,
                                   ),
                                 ),
-                              ),
-                            ],
+                                const SizedBox(height: 4),
+                                Text(
+                                  '${branchProvider.selectedBranch?.name ?? (branches.isNotEmpty ? branches.first.name : "Maarif Branch")} • ${branchProvider.selectedBranch?.city.isNotEmpty == true ? branchProvider.selectedBranch!.city : "Casablanca"}',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Colors.white.withOpacity(0.88),
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
-                    ),
-                  );
-                }),
-              );
-            },
+                      const SizedBox(height: 16),
+                      // Bottom Statistics Chips (Two equal width chips side by side)
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildHeroChip(
+                              icon: Icons.qr_code_2_rounded,
+                              label: '${branches.length} Total QR Menus',
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildHeroChip(
+                              icon: Icons.check_circle_outline_rounded,
+                              label: '${branches.length} Active Branches',
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
-      ],
+
+          const SizedBox(height: 28),
+
+          // Main Section Title
+          Text(
+            'Branch QR Menus',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: isDark ? Colors.white : const Color(0xFF1E293B),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          if (branches.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 48),
+              child: Center(child: Text('No branches available.')),
+            )
+          else
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final double maxWidth = constraints.maxWidth;
+                int crossAxisCount = (maxWidth / 380).floor();
+                if (crossAxisCount < 1) crossAxisCount = 1;
+
+                final double spacing = 16.0;
+                final double itemWidth = crossAxisCount == 1
+                    ? maxWidth
+                    : (maxWidth - (spacing * (crossAxisCount - 1))) / crossAxisCount;
+
+                return Wrap(
+                  spacing: spacing,
+                  runSpacing: spacing,
+                  children: List.generate(branches.length, (index) {
+                    final branch = branches[index];
+                    final qrLink = branch.qrUrl.isNotEmpty
+                        ? branch.qrUrl
+                        : 'https://wassimfood.com/menu/${branch.slug}';
+                    final city = branch.city.isNotEmpty ? branch.city : 'Casablanca';
+
+                    return SizedBox(
+                      width: itemWidth,
+                      child: Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF1E1E26) : Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: isDark ? Colors.white10 : const Color(0xFFE2E8F0),
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(isDark ? 0.2 : 0.04),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            // Top Row: Branch Icon, Name, City, Status
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: primaryColor.withOpacity(0.08),
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                  child: Icon(
+                                    Icons.storefront_rounded,
+                                    color: primaryColor,
+                                    size: 24,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        branch.name,
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16,
+                                          color: isDark ? Colors.white : const Color(0xFF1E293B),
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        '$city • Morocco',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: isDark ? Colors.white38 : Colors.grey.shade600,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF10B981).withOpacity(0.12),
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: const [
+                                      CircleAvatar(radius: 3, backgroundColor: Color(0xFF10B981)),
+                                      SizedBox(width: 4),
+                                      Text(
+                                        'Active',
+                                        style: TextStyle(
+                                          color: Color(0xFF10B981),
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            const SizedBox(height: 16),
+                            Divider(color: isDark ? Colors.white10 : const Color(0xFFF1F5F9), height: 1),
+                            const SizedBox(height: 16),
+
+                            // Middle Row: Delivery time & Fee in DH
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.timer_outlined, size: 16, color: Colors.grey.shade500),
+                                      const SizedBox(width: 6),
+                                      Expanded(
+                                        child: Text(
+                                          'Time: ${branch.deliveryTime.isNotEmpty ? branch.deliveryTime : "20-30 min"}',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                            color: isDark ? Colors.white70 : Colors.grey.shade700,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Expanded(
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.delivery_dining_outlined, size: 16, color: Colors.grey.shade500),
+                                      const SizedBox(width: 6),
+                                      Expanded(
+                                        child: Text(
+                                          'Fee: ${CurrencyFormatter.formatDH(branch.deliveryFee)}',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                            color: isDark ? Colors.white70 : Colors.grey.shade700,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            const SizedBox(height: 20),
+
+                            // Bottom Row: Primary Show QR + Secondary Icon Action Buttons
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: ElevatedButton.icon(
+                                    onPressed: () => _showPrintQRDialog(context, branch, qrLink),
+                                    icon: const Icon(Icons.play_arrow_rounded, size: 18),
+                                    label: const Text(
+                                      'Show QR',
+                                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                    ),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: primaryColor,
+                                      foregroundColor: Colors.white,
+                                      elevation: 0,
+                                      padding: const EdgeInsets.symmetric(vertical: 12),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                _buildRoundedIconButton(
+                                  icon: Icons.copy_rounded,
+                                  tooltip: 'Copy Link',
+                                  isDark: isDark,
+                                  onPressed: () async {
+                                    await Clipboard.setData(ClipboardData(text: qrLink));
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                          content: Text('Menu URL copied to clipboard'),
+                                          backgroundColor: Colors.green,
+                                        ),
+                                      );
+                                    }
+                                  },
+                                ),
+                                const SizedBox(width: 6),
+                                _buildRoundedIconButton(
+                                  icon: Icons.download_rounded,
+                                  tooltip: 'Download QR',
+                                  isDark: isDark,
+                                  onPressed: () => _downloadQR(context, branch, qrLink),
+                                ),
+                                const SizedBox(width: 6),
+                                _buildRoundedIconButton(
+                                  icon: Icons.print_rounded,
+                                  tooltip: 'Print QR',
+                                  isDark: isDark,
+                                  onPressed: () => _printQR(context, branch, qrLink),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }),
+                );
+              },
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeroChip({required IconData icon, required String label}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.18),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.25),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, color: Colors.white, size: 16),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRoundedIconButton({
+    required IconData icon,
+    required String tooltip,
+    required bool isDark,
+    required VoidCallback onPressed,
+  }) {
+    return Material(
+      color: isDark ? Colors.white.withOpacity(0.08) : const Color(0xFFF1F5F9),
+      shape: const CircleBorder(),
+      clipBehavior: Clip.antiAlias,
+      child: IconButton(
+        icon: Icon(icon, size: 18, color: isDark ? Colors.white70 : const Color(0xFF475569)),
+        onPressed: onPressed,
+        tooltip: tooltip,
+        constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+        padding: EdgeInsets.zero,
+      ),
     );
   }
 
@@ -2771,14 +3658,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       );
       final qrCode = qrValidationResult.qrCode;
       if (qrCode == null) return;
-      
+
       final painter = QrPainter.withQr(
         qr: qrCode,
         color: const Color(0xFF000000),
-        emptyColor: const Color(0x00FFFFFF), // Transparent background as requested
+        emptyColor: const Color(0x00FFFFFF),
         gapless: true,
       );
-      
+
       final picData = await painter.toImageData(2048, format: ui.ImageByteFormat.png);
       if (picData != null) {
         final buffer = picData.buffer.asUint8List();
@@ -2789,7 +3676,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error generating QR: $e'), backgroundColor: Colors.red));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error generating QR: $e'), backgroundColor: Colors.red),
+        );
       }
     }
   }
@@ -2797,22 +3686,22 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   Future<void> _printQR(BuildContext context, Branch branch, String link) async {
     try {
       final doc = pw.Document();
-      
+
       final qrValidationResult = QrValidator.validate(
         data: link,
         version: QrVersions.auto,
         errorCorrectionLevel: QrErrorCorrectLevel.L,
       );
-      
+
       final painter = QrPainter.withQr(
         qr: qrValidationResult.qrCode!,
         color: const Color(0xFF000000),
-        emptyColor: const Color(0xFFFFFFFF), // White background for print
+        emptyColor: const Color(0xFFFFFFFF),
         gapless: true,
       );
       final picData = await painter.toImageData(1024, format: ui.ImageByteFormat.png);
       final img = pw.MemoryImage(picData!.buffer.asUint8List());
-      
+
       doc.addPage(
         pw.Page(
           pageFormat: PdfPageFormat.a5,
@@ -2865,175 +3754,26 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           },
         ),
       );
-      
+
       await Printing.layoutPdf(
         onLayout: (PdfPageFormat format) async => doc.save(),
         name: '${branch.slug}_qr_menu',
       );
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error printing QR: $e'), backgroundColor: Colors.red));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error printing QR: $e'), backgroundColor: Colors.red),
+        );
       }
     }
   }
 
   void _showPrintQRDialog(BuildContext context, Branch branch, String link) {
-    showGeneralDialog(
-      context: context,
-      barrierDismissible: true,
-      barrierLabel: 'Dismiss',
-      transitionDuration: const Duration(milliseconds: 300),
-      pageBuilder: (context, anim1, anim2) {
-        return Align(
-          alignment: Alignment.center,
-          child: Material(
-            color: Colors.transparent,
-            child: Container(
-              width: 450,
-              margin: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF1E1E26) : Colors.white,
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 20, offset: const Offset(0, 10)),
-                ],
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(32),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Restaurant Logo/Header
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.deepOrange.withOpacity(0.1),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(Icons.restaurant_menu_rounded, color: Colors.deepOrange, size: 32),
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Wassim Food',
-                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, letterSpacing: 0.5),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      branch.name,
-                      style: const TextStyle(fontSize: 18, color: Colors.deepOrange, fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      branch.address,
-                      style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 24),
-                    // Large QR Code
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4)),
-                        ],
-                      ),
-                      child: QrImageView(
-                        data: link,
-                        version: QrVersions.auto,
-                        size: 220,
-                        backgroundColor: Colors.white,
-                        errorCorrectionLevel: QrErrorCorrectLevel.H,
-                        gapless: false,
-                        embeddedImageStyle: const QrEmbeddedImageStyle(
-                          size: Size(40, 40),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        link,
-                        style: TextStyle(fontSize: 11, color: Colors.grey.shade600, fontWeight: FontWeight.w500),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                    const SizedBox(height: 32),
-                    // Action Buttons
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: () async {
-                              await Clipboard.setData(ClipboardData(text: link));
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('URL Copied!'), backgroundColor: Colors.green),
-                                );
-                              }
-                            },
-                            icon: const Icon(Icons.copy_rounded, size: 16),
-                            label: const Text('Copy'),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: () => _downloadQR(context, branch, link),
-                            icon: const Icon(Icons.download_rounded, size: 16),
-                            label: const Text('Save'),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextButton(
-                            onPressed: () => Navigator.pop(context),
-                            child: const Text('Close'),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          flex: 2,
-                          child: ElevatedButton.icon(
-                            onPressed: () => _printQR(context, branch, link),
-                            icon: const Icon(Icons.print_rounded, size: 18),
-                            label: const Text('Print A5 Menu'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.deepOrange,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-      transitionBuilder: (context, anim1, anim2, child) {
-        return FadeTransition(
-          opacity: anim1,
-          child: ScaleTransition(
-            scale: Tween<double>(begin: 0.95, end: 1.0).animate(CurvedAnimation(parent: anim1, curve: Curves.easeOutCubic)),
-            child: child,
-          ),
-        );
-      },
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AdminQrDetailsScreen(branch: branch, qrLink: link),
+      ),
     );
   }
 

@@ -9,6 +9,7 @@ import '../widgets/paper_flyer_menu.dart';
 import '../widgets/menu_item_card.dart';
 import '../widgets/popular_item_card.dart';
 import '../widgets/bottom_nav_bar.dart';
+import '../widgets/client_navbar.dart';
 import '../widgets/top_actions.dart';
 import '../widgets/app_drawer.dart';
 import '../widgets/faq_section.dart';
@@ -91,83 +92,8 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     return Scaffold(
-      endDrawer: const AppDrawer(),
-      appBar: AppBar(
-        toolbarHeight: 68,
-        titleSpacing: 0,
-        title: LayoutBuilder(
-          builder: (context, constraints) {
-            final isCompact = constraints.maxWidth < 360;
-            return Padding(
-              padding: const EdgeInsets.only(left: 16, right: 8),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  const Icon(Icons.location_on, color: Colors.white, size: 18),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Delivering from',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: isCompact ? 10 : 11,
-                            color: Colors.white70,
-                            height: 1.1,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          selectedBranch.name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: isCompact ? 13 : 14,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-        ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: TextButton.icon(
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                minimumSize: const Size(0, 0),
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
-              onPressed: () {
-                Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(builder: (_) => const BranchSelectionScreen()),
-                );
-              },
-              icon: const Icon(Icons.swap_horiz, color: Colors.white, size: 18),
-              label: const Text('Change', style: TextStyle(fontWeight: FontWeight.bold)),
-            ),
-          ),
-          const SizedBox(width: 8),
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 8),
-            child: TopActions(),
-          ),
-          const SizedBox(width: 10),
-        ],
-        backgroundColor: Colors.deepOrange,
-        elevation: 0,
-      ),
+      drawer: const AppDrawer(),
+      appBar: const ClientNavbar(),
       body: Center(
         child: Container(
           constraints: BoxConstraints(maxWidth: isMobile ? double.infinity : 900),

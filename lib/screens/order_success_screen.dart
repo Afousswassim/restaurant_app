@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/client_navbar.dart';
 import '../models/order.dart';
 import '../utils/helpers.dart';
 import 'splash_screen.dart';
@@ -41,12 +42,9 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen>
     final isMobile = ResponsiveUtil.isMobile(size.width);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Order Confirmed'),
-        backgroundColor: Colors.green,
-        foregroundColor: Colors.white,
-        automaticallyImplyLeading: false,
-        centerTitle: true,
+      appBar: const ClientNavbar(
+        title: 'Order Confirmed',
+        showMenuButton: false,
       ),
       body: Center(
         child: Container(

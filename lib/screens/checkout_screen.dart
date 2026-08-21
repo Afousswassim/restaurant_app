@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../widgets/client_navbar.dart';
 import '../providers/cart_provider.dart';
 import '../providers/order_provider.dart';
 import '../providers/client_provider.dart';
@@ -131,10 +132,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     final cartProvider = context.watch<CartProvider>();
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Checkout'),
-        backgroundColor: Colors.deepOrange,
-        foregroundColor: Colors.white,
+      appBar: const ClientNavbar(
+        title: 'Checkout',
+        showBackButton: true,
+        showMenuButton: false,
       ),
       body: Center(
         child: Container(

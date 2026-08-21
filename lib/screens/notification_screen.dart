@@ -4,6 +4,7 @@ import '../providers/client_provider.dart';
 import '../providers/notification_provider.dart';
 import '../models/notification.dart';
 import '../providers/theme_provider.dart';
+import '../widgets/client_navbar.dart';
 import '../widgets/top_actions.dart';
 import '../widgets/app_drawer.dart';
 import '../widgets/bottom_nav_bar.dart';
@@ -41,22 +42,11 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      endDrawer: const AppDrawer(),
-      appBar: AppBar(
-        title: Text(
-          'Notifications',
-          style: textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: colorScheme.primary,
-          ),
-        ),
-        centerTitle: true,
-        backgroundColor: theme.scaffoldBackgroundColor,
-        elevation: 0,
-        shape: Border(
-          bottom: BorderSide(color: theme.dividerColor),
-        ),
-        actions: const [TopActions()],
+      drawer: const AppDrawer(),
+      appBar: const ClientNavbar(
+        title: 'Notifications',
+        showBackButton: true,
+        showMenuButton: false,
       ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),

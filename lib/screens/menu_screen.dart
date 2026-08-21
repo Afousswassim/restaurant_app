@@ -4,10 +4,10 @@ import '../providers/branch_provider.dart';
 import '../providers/category_provider.dart';
 import '../providers/menu_provider.dart';
 import '../widgets/menu_item_card.dart';
-import '../widgets/category_chip.dart';
+import '../widgets/category_tabs.dart';
 import '../widgets/paper_flyer_menu.dart';
 import '../widgets/bottom_nav_bar.dart';
-import '../widgets/top_actions.dart';
+import '../widgets/client_navbar.dart';
 import '../widgets/app_drawer.dart';
 import '../screens/branch_selection_screen.dart';
 import '../screens/food_details_screen.dart';
@@ -40,35 +40,31 @@ class _MenuScreenState extends State<MenuScreen> {
   }
 
   @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     final branchProvider = context.watch<BranchProvider>();
     final selectedBranch = branchProvider.selectedBranch;
     final menuProvider = context.watch<MenuProvider>();
     final categoryProvider = context.watch<CategoryProvider>();
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
+
     final size = MediaQuery.of(context).size;
     final isMobile = ResponsiveUtil.isMobile(size.width);
 
-    final visibleCategories = <Map<String, String>>[
-      {'name': 'All', 'icon': '🔎'},
-      ...categoryProvider.activeCategories.map(
-        (category) => {
-          'name': category.name,
-          'icon': category.icon.isNotEmpty ? category.icon : '🍽️',
-        },
-      ),
-    ];
-
     final visibleItems = menuProvider.menuItems.where((item) {
       final isActiveCategory = categoryProvider.activeCategories.any(
-        (category) =>
-            category.name.toLowerCase() == item.category.toLowerCase(),
+        (category) => category.name.toLowerCase() == item.category.toLowerCase(),
       );
       if (!isActiveCategory) return false;
       if (menuProvider.selectedCategory.toLowerCase() == 'all') return true;
-      return item.category.toLowerCase() ==
-          menuProvider.selectedCategory.toLowerCase();
+      return item.category.toLowerCase() == menuProvider.selectedCategory.toLowerCase();
     }).toList();
 
     if (selectedBranch == null) {
@@ -81,92 +77,106 @@ class _MenuScreenState extends State<MenuScreen> {
     }
 
     return Scaffold(
-      endDrawer: const AppDrawer(),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black87),
-          onPressed: () => Navigator.of(context).maybePop(),
-        ),
-        title: const SizedBox.shrink(),
-        actions: const [TopActions()],
-      ),
+      backgroundColor: theme.scaffoldBackgroundColor,
+      drawer: const AppDrawer(),
+      appBar: const ClientNavbar(title: 'Menu'),
       body: Center(
         child: Container(
           constraints: BoxConstraints(
-            maxWidth: isMobile ? double.infinity : 900,
+            maxWidth: isMobile ? double.infinity : 960,
           ),
           child: CustomScrollView(
             physics: const BouncingScrollPhysics(),
             slivers: [
-              // Selected branch card
+              // Selected Branch Info Card
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-                  child: Card(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                        color: isDark ? Colors.white10 : const Color(0xFFF1F5F9),
+                        width: 1,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(isDark ? 0.2 : 0.03),
+                          blurRadius: 10,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
                     ),
-                    elevation: 0,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 12,
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'Currently Ordering From',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                                const SizedBox(height: 6),
-                                Text(
-                                  selectedBranch.name,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                              ],
-                            ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.deepOrange.shade50,
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                          TextButton(
-                            onPressed: () {
-                              Navigator.of(context).pushReplacement(
-                                MaterialPageRoute(
-                                  builder: (_) => const BranchSelectionScreen(),
+                          child: const Icon(
+                            Icons.storefront_rounded,
+                            color: Colors.deepOrange,
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Currently Ordering From',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: isDark ? Colors.white60 : Colors.grey.shade600,
                                 ),
-                              );
-                            },
-                            child: const Text(
-                              'Change',
-                              style: TextStyle(
-                                color: Colors.deepOrange,
-                                fontWeight: FontWeight.bold,
                               ),
+                              const SizedBox(height: 2),
+                              Text(
+                                selectedBranch.name,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15,
+                                  color: isDark ? Colors.white : const Color(0xFF2C1810),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            Navigator.of(context).pushReplacement(
+                              MaterialPageRoute(
+                                builder: (_) => const BranchSelectionScreen(),
+                              ),
+                            );
+                          },
+                          child: const Text(
+                            'Change',
+                            style: TextStyle(
+                              color: Colors.deepOrange,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
                             ),
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
               ),
-              // Search + Flyer row
+
+              // Search Bar & Paper Flyer Row
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
                   child: LayoutBuilder(
                     builder: (context, constraints) {
-                      final isNarrow = constraints.maxWidth < 500;
+                      final isNarrow = constraints.maxWidth < 520;
                       return Wrap(
                         alignment: WrapAlignment.spaceBetween,
                         crossAxisAlignment: WrapCrossAlignment.center,
@@ -174,26 +184,44 @@ class _MenuScreenState extends State<MenuScreen> {
                         runSpacing: 10,
                         children: [
                           SizedBox(
-                            width: isNarrow ? constraints.maxWidth : constraints.maxWidth - 150,
+                            width: isNarrow ? constraints.maxWidth : constraints.maxWidth - 160,
                             child: TextField(
                               controller: _searchController,
+                              style: const TextStyle(fontSize: 14),
                               decoration: InputDecoration(
-                                hintText: 'Search for a product...',
-                                prefixIcon: const Icon(Icons.search),
+                                hintText: 'Search for burgers, drinks, meals...',
+                                hintStyle: TextStyle(
+                                  color: isDark ? Colors.white38 : Colors.grey.shade500,
+                                  fontSize: 13,
+                                ),
+                                prefixIcon: const Icon(Icons.search_rounded, color: Colors.deepOrange),
                                 filled: true,
-                                fillColor: Colors.grey.shade100,
+                                fillColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
                                 suffixIcon: _searchController.text.isNotEmpty
                                     ? IconButton(
-                                        icon: const Icon(Icons.clear),
+                                        icon: const Icon(Icons.clear_rounded, size: 18),
                                         onPressed: () {
                                           _searchController.clear();
                                           menuProvider.setSearchTerm('');
                                         },
                                       )
                                     : null,
+                                contentPadding: const EdgeInsets.symmetric(vertical: 12),
                                 border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide.none,
+                                  borderRadius: BorderRadius.circular(16),
+                                  borderSide: BorderSide(
+                                    color: isDark ? Colors.white10 : const Color(0xFFF1F5F9),
+                                  ),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                  borderSide: BorderSide(
+                                    color: isDark ? Colors.white10 : const Color(0xFFF1F5F9),
+                                  ),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                  borderSide: const BorderSide(color: Colors.deepOrange, width: 1.5),
                                 ),
                               ),
                               textInputAction: TextInputAction.search,
@@ -202,26 +230,24 @@ class _MenuScreenState extends State<MenuScreen> {
                           ),
                           SizedBox(
                             width: isNarrow ? constraints.maxWidth : null,
-                            child: ElevatedButton(
-                              onPressed: () =>
-                                  PaperFlyerMenu.show(context, selectedBranch.name),
+                            child: ElevatedButton.icon(
+                              onPressed: () => PaperFlyerMenu.show(context, selectedBranch.name),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.deepOrange,
+                                foregroundColor: Colors.white,
+                                elevation: 0,
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 14,
-                                  vertical: 12,
+                                  vertical: 13,
                                 ),
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
+                                  borderRadius: BorderRadius.circular(16),
                                 ),
                               ),
-                              child: const Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(Icons.menu_book, color: Colors.white),
-                                  SizedBox(width: 8),
-                                  Text('Paper Flyer'),
-                                ],
+                              icon: const Icon(Icons.menu_book_rounded, size: 18),
+                              label: const Text(
+                                'Paper Flyer',
+                                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
                               ),
                             ),
                           ),
@@ -231,44 +257,28 @@ class _MenuScreenState extends State<MenuScreen> {
                   ),
                 ),
               ),
-              // Categories
+
+              // Reusable Category Navigation Bar (Admin Categories)
               SliverToBoxAdapter(
-                child: SizedBox(
-                  height: 60,
-                  child: ListView.separated(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    scrollDirection: Axis.horizontal,
-                    physics: const BouncingScrollPhysics(),
-                    itemCount: visibleCategories.length,
-                    separatorBuilder: (_, __) => const SizedBox(width: 8),
-                    itemBuilder: (context, index) {
-                      final category = visibleCategories[index];
-                      final name = category['name']!;
-                      return CategoryChip(
-                        label: '${category['icon']}  $name',
-                        isSelected:
-                            menuProvider.selectedCategory.toLowerCase() ==
-                            name.toLowerCase(),
-                        onTap: () {
-                          menuProvider.selectCategory(name);
-                          _searchController.clear();
-                        },
-                      );
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: CategoryTabs(
+                    categories: categoryProvider.activeCategories,
+                    selectedCategory: menuProvider.selectedCategory,
+                    onSelectCategory: (categoryName) {
+                      menuProvider.selectCategory(categoryName);
+                      _searchController.clear();
                     },
                   ),
                 ),
               ),
-              // Product grid / states
+
+              // Product Grid / Loading / Error / Empty States
               if (menuProvider.isLoading)
                 const SliverFillRemaining(
                   child: Center(
                     child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        Colors.deepOrange,
-                      ),
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.deepOrange),
                     ),
                   ),
                 )
@@ -279,19 +289,15 @@ class _MenuScreenState extends State<MenuScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(
-                          Icons.error_outline,
-                          size: 48,
-                          color: Colors.red,
-                        ),
+                        const Icon(Icons.error_outline_rounded, size: 48, color: Colors.red),
                         const SizedBox(height: 16),
                         const Text('Failed to load menu items'),
                         const SizedBox(height: 12),
                         ElevatedButton(
-                          onPressed: () =>
-                              menuProvider.loadMenu(selectedBranch.id),
+                          onPressed: () => menuProvider.loadMenu(selectedBranch.id),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.deepOrange,
+                            foregroundColor: Colors.white,
                           ),
                           child: const Text('Retry'),
                         ),
@@ -299,29 +305,62 @@ class _MenuScreenState extends State<MenuScreen> {
                     ),
                   ),
                 )
+              else if (visibleItems.isEmpty)
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.search_off_rounded,
+                            size: 64,
+                            color: isDark ? Colors.white30 : Colors.grey.shade400,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'No products found',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: isDark ? Colors.white70 : Colors.grey.shade700,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            'Try searching for another product or select a different category.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: isDark ? Colors.white60 : Colors.grey.shade500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                )
               else
                 SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
                   sliver: SliverToBoxAdapter(
                     child: LayoutBuilder(
                       builder: (context, constraints) {
                         final double maxWidth = constraints.maxWidth;
                         int crossAxisCount = (maxWidth / 220).ceil();
                         if (crossAxisCount < 1) crossAxisCount = 1;
-                        
-                        final double spacing = 12.0;
-                        final double itemWidth = (maxWidth - (spacing * (crossAxisCount - 1))) / crossAxisCount;
+                        if (maxWidth > 600 && crossAxisCount < 2) crossAxisCount = 2;
 
-                        final items = visibleItems;
-                        if (items.isEmpty) {
-                          return const Center(child: Text('No products found'));
-                        }
+                        final double spacing = 14.0;
+                        final double itemWidth =
+                            (maxWidth - (spacing * (crossAxisCount - 1))) / crossAxisCount;
 
                         return Wrap(
                           spacing: spacing,
                           runSpacing: spacing,
-                          children: List.generate(items.length, (index) {
-                            final item = items[index];
+                          children: visibleItems.map((item) {
                             return SizedBox(
                               width: itemWidth,
                               child: MenuItemCard(
@@ -335,18 +374,19 @@ class _MenuScreenState extends State<MenuScreen> {
                                 },
                               ),
                             );
-                          }),
+                          }).toList(),
                         );
                       },
                     ),
                   ),
                 ),
+
               const SliverToBoxAdapter(child: SizedBox(height: 120)),
             ],
           ),
         ),
       ),
-      bottomNavigationBar: BottomNavBar(currentIndex: 1),
+      bottomNavigationBar: const BottomNavBar(currentIndex: 1),
     );
   }
 }

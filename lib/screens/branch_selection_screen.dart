@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/branch_provider.dart';
 import '../providers/menu_provider.dart';
 import '../utils/helpers.dart';
+import '../widgets/client_navbar.dart';
 import '../widgets/branch_card.dart';
 import 'home_screen.dart';
 import 'admin_login_screen.dart';
@@ -30,22 +31,45 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen> {
     final isMobile = ResponsiveUtil.isMobile(size.width);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Select Wassim Food Branch',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        centerTitle: true,
-        backgroundColor: Colors.deepOrange,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.admin_panel_settings_outlined),
-            tooltip: 'Admin Portal',
-            onPressed: () {
-              Navigator.of(context).pushNamed(AdminLoginScreen.routeName);
-            },
+      appBar: ClientNavbar(
+        title: 'Select Branch',
+        showMenuButton: false,
+        extraActions: [
+          Tooltip(
+            message: 'Admin Portal',
+            child: Container(
+              width: 40,
+              height: 40,
+              margin: const EdgeInsets.only(right: 8),
+              decoration: BoxDecoration(
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? const Color(0xFF2A2A2A)
+                    : Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Colors.white10
+                      : Colors.black.withOpacity(0.06),
+                  width: 1,
+                ),
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(12),
+                  onTap: () {
+                    Navigator.of(context).pushNamed(AdminLoginScreen.routeName);
+                  },
+                  child: Icon(
+                    Icons.admin_panel_settings_outlined,
+                    size: 20,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.white
+                        : Colors.black87,
+                  ),
+                ),
+              ),
+            ),
           ),
         ],
       ),

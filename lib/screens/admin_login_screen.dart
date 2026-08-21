@@ -55,18 +55,21 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'Admin Access',
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: theme.colorScheme.primary,
+          ),
         ),
         centerTitle: true,
-        backgroundColor: Colors.white,
+        backgroundColor: theme.scaffoldBackgroundColor,
         elevation: 0,
-        foregroundColor: Colors.deepOrange,
+        foregroundColor: theme.colorScheme.primary,
         shape: Border(
-          bottom: BorderSide(color: Colors.grey.shade100),
+          bottom: BorderSide(color: theme.dividerColor),
         ),
       ),
       body: Center(
