@@ -44,6 +44,13 @@ app.use('/coupons', couponRoutes);
 app.use('/loyalty', loyaltyRoutes);
 app.use('/ai', aiRoutes);
 
+app.get('/', (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'Wassim Food API is running',
+  });
+});
+
 app.get('/health', (req, res) => {
   res.status(200).json({
     success: true,
