@@ -32,7 +32,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 2, vsync: this);
     _loadProfileDetails();
   }
 
@@ -429,7 +429,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen>
                 _showErrorSnackBar(e.toString());
               }
             },
-            style: FilledButton.styleFrom(backgroundColor: Colors.deepOrange),
+            style: FilledButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.primary),
             child: const Text('Create Order'),
           ),
         ],
@@ -835,8 +835,6 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen>
                   tabs: [
                     const Tab(text: 'Information'),
                     Tab(text: 'Order(${orderHistory.length})'),
-                    const Tab(text: 'Wishlist(0)'),
-                    const Tab(text: 'Review(0)'),
                   ],
                 ),
               ),
@@ -848,8 +846,6 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen>
                   children: [
                     _buildInformationTab(customer, statistics, rewardSystem, favoriteProducts, isDark, primaryColor),
                     _buildOrdersTab(customer, filteredOrders, locationsList, isDark, theme),
-                    _buildPlaceholderTab('Wishlist', 'No wishlist items available for this customer.', Icons.favorite_border_rounded),
-                    _buildPlaceholderTab('Reviews', 'No product reviews submitted by this customer.', Icons.rate_review_outlined),
                   ],
                 ),
               ),
@@ -881,46 +877,69 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen>
           // Contact Info Bubble Card
           _buildContactCard(customer, isDark),
           const SizedBox(height: 16),
-          // Category Section (to match reference design)
-          _buildDetailCard(
-            title: 'Category',
-            action: TextButton(
-              onPressed: () => _showEditProfileDialog(customer),
-              child: const Text('+ Add', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
-            ),
-            content: Row(
-              children: [
-                Icon(Icons.grid_view_rounded, size: 16, color: Colors.grey.shade500),
-                const SizedBox(width: 8),
-                Text(
-                  customer.favoriteCategory.isNotEmpty
-                      ? customer.favoriteCategory
-                      : 'Add Category',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: customer.favoriteCategory.isNotEmpty ? null : Colors.grey.shade500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
           // Note Section
           _buildDetailCard(
             title: 'Note',
             action: TextButton(
-              onPressed: () => _showEditProfileDialog(customer),
-              child: const Text('+ Add', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+              onPressed: () => _showEditNoteDialog(customer),
+              child: Text(
+                customer.note.isNotEmpty ? 'Edit' : '+ Add',
+                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+              ),
             ),
-            content: Row(
-              children: [
-                Icon(Icons.description_outlined, size: 16, color: Colors.grey.shade500),
-                const SizedBox(width: 8),
-                Text(
-                  'No Note',
-                  style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
-                ),
-              ],
+            content: InkWell(
+              onTap: () => _showEditNoteDialog(customer),
+              borderRadius: BorderRadius.circular(8),
+              child: customer.note.isNotEmpty
+                  ? Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF121217) : Colors.grey.shade50,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: isDark ? Colors.grey.shade800 : Colors.grey.shade200,
+                        ),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(
+                            Icons.description_outlined,
+                            size: 18,
+                            color: primaryColor,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              customer.note,
+                              style: TextStyle(
+                                fontSize: 13,
+                                height: 1.4,
+                                color: isDark ? Colors.grey.shade200 : Colors.grey.shade800,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : Row(
+                      children: [
+                        Icon(
+                          Icons.description_outlined,
+                          size: 16,
+                          color: Colors.grey.shade500,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'No Note',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey.shade500,
+                          ),
+                        ),
+                      ],
+                    ),
             ),
           ),
           const SizedBox(height: 16),
@@ -1603,7 +1622,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen>
           child: FilledButton(
             onPressed: () => _addNewOrderPlaceholder(customer),
             style: FilledButton.styleFrom(
-              backgroundColor: Colors.deepOrange,
+              backgroundColor: theme.colorScheme.primary,
               padding: const EdgeInsets.symmetric(vertical: 14),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
@@ -1802,27 +1821,108 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen>
     );
   }
 
-  Widget _buildPlaceholderTab(String title, String message, IconData icon) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+
+  // --- Note Edit Modal Dialog ---
+
+  void _showEditNoteDialog(Customer customer) {
+    final noteController = TextEditingController(text: customer.note);
+    final formKey = GlobalKey<FormState>();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
           children: [
-            Icon(icon, size: 48, color: Colors.grey.shade400),
-            const SizedBox(height: 12),
-            Text(
-              title,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            Icon(
+              Icons.note_alt_outlined,
+              color: Theme.of(context).colorScheme.primary,
+              size: 22,
             ),
-            const SizedBox(height: 8),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey.shade500),
-            ),
+            const SizedBox(width: 8),
+            Text(customer.note.isEmpty ? 'Add Note' : 'Edit Note'),
           ],
         ),
+        content: SizedBox(
+          width: 450,
+          child: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Add internal customer notes, preferences, or special instructions.',
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                TextFormField(
+                  controller: noteController,
+                  maxLines: 4,
+                  maxLength: 500,
+                  autofocus: true,
+                  decoration: InputDecoration(
+                    hintText: 'Type customer note here...',
+                    hintStyle: TextStyle(
+                      color: Colors.grey.shade400,
+                      fontSize: 13,
+                    ),
+                    filled: true,
+                    fillColor: isDark ? const Color(0xFF121217) : Colors.grey.shade50,
+                    contentPadding: const EdgeInsets.all(14),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: isDark ? Colors.grey.shade800 : Colors.grey.shade300,
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: Theme.of(context).colorScheme.primary,
+                        width: 1.5,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              final newNote = noteController.text.trim();
+              final updatedCustomer = customer.copyWith(note: newNote);
+              try {
+                await ApiService.updateCustomer(updatedCustomer);
+                if (mounted) {
+                  Navigator.of(context).pop();
+                  _showSuccessSnackBar(
+                    newNote.isEmpty ? 'Note cleared' : 'Note saved successfully',
+                  );
+                }
+                _hasChanges = true;
+                _loadProfileDetails();
+              } catch (e) {
+                _showErrorSnackBar(e.toString());
+              }
+            },
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            child: const Text('Save'),
+          ),
+        ],
       ),
     );
   }
@@ -1944,6 +2044,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen>
                 totalSpent: customer.totalSpent,
                 favoriteCategory: customer.favoriteCategory,
                 favoriteProduct: customer.favoriteProduct,
+                note: customer.note,
               );
 
               try {

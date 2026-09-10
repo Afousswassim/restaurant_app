@@ -133,6 +133,7 @@ class _AdminProductDetailsScreenState extends State<AdminProductDetailsScreen> {
                               child: product.imageUrl.isNotEmpty
                                   ? Image.network(
                                       product.imageUrl,
+                                      cacheWidth: 300,
                                       fit: BoxFit.cover,
                                       errorBuilder: (_, __, ___) => Container(
                                         color: colorScheme.primary.withOpacity(0.1),

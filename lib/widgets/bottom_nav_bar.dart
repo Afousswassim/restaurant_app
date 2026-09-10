@@ -39,16 +39,21 @@ class BottomNavBar extends StatelessWidget {
               top: 4,
             ),
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-              borderRadius: BorderRadius.circular(24),
+              color: isDark ? const Color(0xFF1E293B) : Colors.white,
+              borderRadius: BorderRadius.circular(28),
               border: Border.all(
-                color: isDark ? Colors.white.withOpacity(0.08) : const Color(0xFFF1F5F9),
+                color: isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFE2E8F0),
                 width: 1,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(isDark ? 0.35 : 0.08),
-                  blurRadius: 18,
+                  color: const Color(0xFF8D4B38).withValues(alpha: isDark ? 0.2 : 0.08),
+                  blurRadius: 24,
+                  offset: const Offset(0, 8),
+                ),
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.06),
+                  blurRadius: 16,
                   offset: const Offset(0, 4),
                 ),
               ],
@@ -56,7 +61,7 @@ class BottomNavBar extends StatelessWidget {
             child: SafeArea(
               top: false,
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
@@ -129,22 +134,23 @@ class BottomNavBar extends StatelessWidget {
   }) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final activeColor = Colors.deepOrange;
-    final inactiveColor = isDark ? Colors.white60 : Colors.grey.shade600;
+    const activeColor = Color(0xFF8D4B38);
+    final inactiveColor = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: () => _onTap(context, index),
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(20),
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeInOut,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           decoration: BoxDecoration(
             color: isSelected
-                ? (isDark ? Colors.deepOrange.withOpacity(0.18) : Colors.deepOrange.shade50)
+                ? (isDark ? const Color(0xFF8D4B38).withValues(alpha: 0.18) : const Color(0xFFF9EFEA))
                 : Colors.transparent,
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(20),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -162,13 +168,20 @@ class BottomNavBar extends StatelessWidget {
                       builder: (context, cart, _) {
                         if (cart.totalQuantity == 0) return const SizedBox.shrink();
                         return Positioned(
-                          right: -6,
-                          top: -4,
+                          right: -8,
+                          top: -6,
                           child: Container(
-                            padding: const EdgeInsets.all(3),
-                            decoration: const BoxDecoration(
-                              color: Colors.red,
-                              shape: BoxShape.circle,
+                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEF4444),
+                              borderRadius: BorderRadius.circular(10),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFFEF4444).withValues(alpha: 0.4),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
                             ),
                             constraints: const BoxConstraints(
                               minWidth: 16,
@@ -179,7 +192,7 @@ class BottomNavBar extends StatelessWidget {
                                 '${cart.totalQuantity}',
                                 style: const TextStyle(
                                   color: Colors.white,
-                                  fontSize: 9,
+                                  fontSize: 10,
                                   fontWeight: FontWeight.bold,
                                 ),
                                 textAlign: TextAlign.center,
@@ -198,6 +211,7 @@ class BottomNavBar extends StatelessWidget {
                   color: isSelected ? activeColor : inactiveColor,
                   fontSize: 11,
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                  letterSpacing: 0.2,
                 ),
               ),
             ],

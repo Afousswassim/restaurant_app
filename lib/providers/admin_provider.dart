@@ -27,6 +27,7 @@ class AdminProvider with ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       if (prefs.containsKey('admin_token')) {
         _token = prefs.getString('admin_token');
+        ApiService.setAdminToken(_token);
         final adminJson = prefs.getString('admin_data');
         if (adminJson != null && adminJson.isNotEmpty) {
           _adminInfo = Map<String, dynamic>.from(jsonDecode(adminJson));
@@ -46,6 +47,7 @@ class AdminProvider with ChangeNotifier {
     try {
       final response = await ApiService.adminLogin(email, password);
       _token = response['token'];
+      ApiService.setAdminToken(_token);
       _adminInfo = Map<String, dynamic>.from(response['admin']);
       
       final prefs = await SharedPreferences.getInstance();
@@ -66,6 +68,7 @@ class AdminProvider with ChangeNotifier {
 
   Future<void> logout({bool clearAll = false}) async {
     _token = null;
+    ApiService.setAdminToken(null);
     _adminInfo = null;
     _orders = [];
     try {

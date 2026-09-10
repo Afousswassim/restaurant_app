@@ -16,6 +16,7 @@ const clientRoutes = require('./routes/clients');
 const couponRoutes = require('./routes/coupons');
 const loyaltyRoutes = require('./routes/loyalty');
 const aiRoutes = require('./routes/aiRoutes');
+const { swaggerUi, swaggerSpec } = require('./config/swagger');
 const { seedDefaultCategories } = require('./seedDefaultCategories');
 const errorHandler = require('./middleware/errorHandler');
 
@@ -25,6 +26,9 @@ app.use(cors());
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+// Swagger / OpenAPI documentation UI
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.use('/branches', branchRoutes);
 app.use('/menu', menuRoutes);

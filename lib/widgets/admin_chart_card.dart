@@ -97,10 +97,10 @@ class AdminStatusPieChart extends StatelessWidget {
     }
 
     final data = [
-      _PieData('Pending', pending, Colors.orange),
-      _PieData('Preparing', preparing, Colors.amber.shade700),
-      _PieData('Delivering', delivering, Colors.blue),
-      _PieData('Delivered', delivered, Colors.green),
+      _PieData('Pending', pending, OrderStatusUtil.getStatusColor('pending')),
+      _PieData('Preparing', preparing, OrderStatusUtil.getStatusColor('preparing')),
+      _PieData('Delivering', delivering, OrderStatusUtil.getStatusColor('delivering')),
+      _PieData('Delivered', delivered, OrderStatusUtil.getStatusColor('delivered')),
     ];
 
     return Row(
@@ -209,7 +209,7 @@ class _RingPainter extends CustomPainter {
     );
 
     final Paint bgPaint = Paint()
-      ..color = Colors.grey.withOpacity(0.08)
+      ..color = Colors.grey.withValues(alpha: 0.08)
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeWidth;
 
@@ -236,14 +236,14 @@ class _RingPainter extends CustomPainter {
 }
 
 // -------------------------------------------------------------------
-// 2. Revenue Summary: Bar Chart
+// 2. Revenue Summary: Bar Chart (Real Dynamic Data)
 // -------------------------------------------------------------------
 class AdminRevenueBarChart extends StatelessWidget {
-  final double totalRevenue;
+  final List<dynamic> orders;
 
   const AdminRevenueBarChart({
     Key? key,
-    required this.totalRevenue,
+    required this.orders,
   }) : super(key: key);
 
   @override
@@ -251,23 +251,38 @@ class AdminRevenueBarChart extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = Theme.of(context).colorScheme.primary;
 
-    // Simulate revenue distribution over the last 6 days/periods for layout purposes
-    final Map<String, double> simulatedData = {
-      'Mon': totalRevenue * 0.12 + 150,
-      'Tue': totalRevenue * 0.15 + 200,
-      'Wed': totalRevenue * 0.08 + 100,
-      'Thu': totalRevenue * 0.22 + 300,
-      'Fri': totalRevenue * 0.25 + 400,
-      'Sat': totalRevenue * 0.18 + 250,
+    double totalRevenue = 0.0;
+    final dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    final Map<String, double> realWeeklyData = {
+      'Mon': 0.0,
+      'Tue': 0.0,
+      'Wed': 0.0,
+      'Thu': 0.0,
+      'Fri': 0.0,
+      'Sat': 0.0,
+      'Sun': 0.0,
     };
 
-    final maxVal = simulatedData.values.isEmpty
+    for (var order in orders) {
+      final status = order.status.toString().toLowerCase().trim();
+      if (status == 'cancelled') continue;
+      final double amt = (order.totalAmount ?? 0).toDouble();
+      totalRevenue += amt;
+
+      final DateTime dt = order.createdAt is DateTime
+          ? order.createdAt
+          : (DateTime.tryParse(order.createdAt.toString()) ?? DateTime.now());
+      final label = dayNames[dt.weekday - 1];
+      realWeeklyData[label] = (realWeeklyData[label] ?? 0.0) + amt;
+    }
+
+    final maxVal = realWeeklyData.values.isEmpty || realWeeklyData.values.every((v) => v == 0)
         ? 1.0
-        : simulatedData.values.reduce(math.max);
+        : realWeeklyData.values.reduce(math.max);
 
     return Column(
       children: [
-        // Subtitle
+        // Subtitle & Total Header
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -297,40 +312,43 @@ class AdminRevenueBarChart extends StatelessWidget {
               return Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.end,
-                children: simulatedData.entries.map((entry) {
+                children: realWeeklyData.entries.map((entry) {
                   final double val = entry.value;
                   final double barHeightPct = maxVal > 0 ? (val / maxVal) : 0;
                   final double barHeight = barHeightPct * barHeightMax;
 
                   return Expanded(
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 6),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          Container(
-                            height: math.max(barHeight, 6.0),
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [primaryColor.withOpacity(0.7), primaryColor],
-                                begin: Alignment.bottomCenter,
-                                end: Alignment.topCenter,
-                              ),
-                              borderRadius: const BorderRadius.vertical(
-                                top: Radius.circular(8),
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: Tooltip(
+                        message: '${entry.key}: ${CurrencyFormatter.formatDH(val)}',
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Container(
+                              height: math.max(barHeight, 6.0),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [primaryColor.withValues(alpha: 0.7), primaryColor],
+                                  begin: Alignment.bottomCenter,
+                                  end: Alignment.topCenter,
+                                ),
+                                borderRadius: const BorderRadius.vertical(
+                                  top: Radius.circular(8),
+                                ),
                               ),
                             ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            entry.key,
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
-                              color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                            const SizedBox(height: 8),
+                            Text(
+                              entry.key,
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   );

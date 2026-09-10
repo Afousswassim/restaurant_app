@@ -20,6 +20,7 @@ import '../models/menu_item.dart';
 import '../models/branch.dart';
 import '../services/api_service.dart';
 import '../utils/helpers.dart';
+import '../utils/qr_menu_image_generator.dart';
 import '../config/app_config.dart';
 import '../widgets/admin_sidebar.dart';
 import '../widgets/admin_stat_card.dart';
@@ -1608,7 +1609,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     child: AdminChartCard(
                       title: 'Revenue Summary',
                       child: AdminRevenueBarChart(
-                        totalRevenue: adminProvider.totalRevenue,
+                        orders: adminProvider.orders,
                       ),
                     ),
                   ),
@@ -1639,7 +1640,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       child: AdminChartCard(
                         title: 'Revenue Summary',
                         child: AdminRevenueBarChart(
-                          totalRevenue: adminProvider.totalRevenue,
+                          orders: adminProvider.orders,
                         ),
                       ),
                     ),
@@ -3650,37 +3651,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   }
 
   Future<void> _downloadQR(BuildContext context, Branch branch, String link) async {
-    try {
-      final qrValidationResult = QrValidator.validate(
-        data: link,
-        version: QrVersions.auto,
-        errorCorrectionLevel: QrErrorCorrectLevel.L,
-      );
-      final qrCode = qrValidationResult.qrCode;
-      if (qrCode == null) return;
-
-      final painter = QrPainter.withQr(
-        qr: qrCode,
-        color: const Color(0xFF000000),
-        emptyColor: const Color(0x00FFFFFF),
-        gapless: true,
-      );
-
-      final picData = await painter.toImageData(2048, format: ui.ImageByteFormat.png);
-      if (picData != null) {
-        final buffer = picData.buffer.asUint8List();
-        await Share.shareXFiles(
-          [XFile.fromData(buffer, mimeType: 'image/png', name: '${branch.slug}_qr.png')],
-          text: 'QR Menu for ${branch.name}',
-        );
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error generating QR: $e'), backgroundColor: Colors.red),
-        );
-      }
-    }
+    await QrMenuImageGenerator.downloadAndShareQrMenu(
+      context: context,
+      branch: branch,
+      qrLink: link,
+    );
   }
 
   Future<void> _printQR(BuildContext context, Branch branch, String link) async {

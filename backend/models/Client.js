@@ -47,6 +47,10 @@ const clientSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    note: {
+      type: String,
+      default: '',
+    },
     lastLoginAt: {
       type: Date,
     },

@@ -25,6 +25,7 @@ class ClientProvider with ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       if (prefs.containsKey('client_token')) {
         _token = prefs.getString('client_token');
+        ApiService.setClientToken(_token);
         final clientJson = prefs.getString('client_data');
         if (clientJson != null) {
           _currentClient = Client.fromJson(jsonDecode(clientJson));
@@ -52,6 +53,7 @@ class ClientProvider with ChangeNotifier {
         password: password,
       );
       _token = data['token'];
+      ApiService.setClientToken(_token);
       _currentClient = Client.fromJson(data['client']);
 
       final prefs = await SharedPreferences.getInstance();
@@ -84,6 +86,7 @@ class ClientProvider with ChangeNotifier {
         password: password,
       );
       _token = data['token'];
+      ApiService.setClientToken(_token);
       _currentClient = Client.fromJson(data['client']);
 
       final prefs = await SharedPreferences.getInstance();
@@ -104,6 +107,7 @@ class ClientProvider with ChangeNotifier {
 
   Future<void> logout() async {
     _token = null;
+    ApiService.setClientToken(null);
     _currentClient = null;
     _error = null;
     final prefs = await SharedPreferences.getInstance();

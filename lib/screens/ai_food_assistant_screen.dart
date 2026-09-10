@@ -788,6 +788,7 @@ class _AiItemTile extends StatelessWidget {
               menuItem.imageUrl,
               width: 70,
               height: 70,
+              cacheWidth: 200,
               fit: BoxFit.cover,
               errorBuilder: (_, __, ___) => Container(
                 width: 70,

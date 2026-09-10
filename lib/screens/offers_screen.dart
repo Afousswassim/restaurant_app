@@ -300,6 +300,7 @@ class _OffersScreenState extends State<OffersScreen> {
               'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=200',
               width: 80,
               height: 80,
+              cacheWidth: 200,
               fit: BoxFit.cover,
               errorBuilder: (context, error, stackTrace) => Container(
                 width: 80,

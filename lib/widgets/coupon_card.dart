@@ -14,19 +14,19 @@ class CouponCard extends StatelessWidget {
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 6),
-      height: 90,
+      height: 94,
       decoration: BoxDecoration(
-        color: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        color: isDarkMode ? const Color(0xFF1E293B) : Colors.white,
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: isDarkMode ? Colors.white10 : const Color(0xFFE2E8F0),
+          color: isDarkMode ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0),
           width: 1,
         ),
-        boxShadow: const [
+        boxShadow: [
           BoxShadow(
-            color: Color(0x05000000),
-            blurRadius: 10,
-            offset: Offset(0, 4),
+            color: Colors.black.withValues(alpha: isDarkMode ? 0.3 : 0.04),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -36,28 +36,30 @@ class CouponCard extends StatelessWidget {
             children: [
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
                         decoration: BoxDecoration(
-                          color: isDarkMode ? const Color(0xFF3E2723) : const Color(0xFFFFF3E0),
-                          borderRadius: BorderRadius.circular(8),
+                          color: isDarkMode
+                              ? const Color(0xFF8D4B38).withValues(alpha: 0.18)
+                              : const Color(0xFFF9EFEA),
+                          borderRadius: BorderRadius.circular(10),
                           border: Border.all(
-                            color: isDarkMode ? const Color(0x4CD84315) : const Color(0xFFFFB74D),
+                            color: const Color(0xFF8D4B38).withValues(alpha: 0.3),
                             width: 1,
                           ),
                         ),
                         child: Text(
                           code,
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: isDarkMode ? const Color(0xFFFF8A65) : const Color(0xFFE65100),
-                            letterSpacing: 0.5,
+                            fontWeight: FontWeight.w900,
+                            color: Color(0xFF8D4B38),
+                            letterSpacing: 0.8,
                           ),
                         ),
                       ),
@@ -66,7 +68,7 @@ class CouponCard extends StatelessWidget {
                         description,
                         style: TextStyle(
                           fontSize: 12,
-                          color: isDarkMode ? Colors.white70 : Colors.grey.shade700,
+                          color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                           fontWeight: FontWeight.w500,
                         ),
                         maxLines: 1,

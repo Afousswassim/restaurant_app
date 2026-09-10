@@ -12,6 +12,7 @@ class Customer {
   final double totalSpent;
   final String favoriteCategory;
   final String favoriteProduct;
+  final String note;
   final DateTime? lastOrder;
   final DateTime? createdAt;
   final DateTime? lastLogin;
@@ -30,6 +31,7 @@ class Customer {
     required this.totalSpent,
     required this.favoriteCategory,
     required this.favoriteProduct,
+    this.note = '',
     this.lastOrder,
     this.createdAt,
     this.lastLogin,
@@ -56,6 +58,7 @@ class Customer {
       totalSpent: (json['totalSpent'] ?? 0).toDouble(),
       favoriteCategory: json['favoriteCategory'] ?? '',
       favoriteProduct: json['favoriteProduct'] ?? '',
+      note: json['note'] ?? json['notes'] ?? '',
       lastOrder: parseDate(json['lastOrder']),
       createdAt: parseDate(json['createdAt']),
       lastLogin: parseDate(json['lastLogin'] ?? json['lastLoginAt']),
@@ -80,6 +83,7 @@ class Customer {
       'totalSpent': totalSpent,
       'favoriteCategory': favoriteCategory,
       'favoriteProduct': favoriteProduct,
+      'note': note,
       'lastOrder': lastOrder?.toIso8601String(),
       'createdAt': createdAt?.toIso8601String(),
       'lastLogin': lastLogin?.toIso8601String(),
@@ -100,6 +104,7 @@ class Customer {
     double? totalSpent,
     String? favoriteCategory,
     String? favoriteProduct,
+    String? note,
     DateTime? lastOrder,
     DateTime? createdAt,
     DateTime? lastLogin,
@@ -118,6 +123,7 @@ class Customer {
       totalSpent: totalSpent ?? this.totalSpent,
       favoriteCategory: favoriteCategory ?? this.favoriteCategory,
       favoriteProduct: favoriteProduct ?? this.favoriteProduct,
+      note: note ?? this.note,
       lastOrder: lastOrder ?? this.lastOrder,
       createdAt: createdAt ?? this.createdAt,
       lastLogin: lastLogin ?? this.lastLogin,

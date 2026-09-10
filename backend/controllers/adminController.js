@@ -3,6 +3,10 @@ const Order = require('../models/Order');
 const MenuItem = require('../models/MenuItem');
 const Category = require('../models/Category');
 const crypto = require('crypto');
+const jwt = require('jsonwebtoken');
+
+const JWT_SECRET = process.env.JWT_SECRET || 'wassim_food_secret_key_2026';
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
 
 function hashPassword(password) {
   return crypto.createHash('sha256').update(password).digest('hex');
@@ -10,7 +14,7 @@ function hashPassword(password) {
 
 /**
  * Admin authentication controller.
- * Handles simple backend login for administrative portal.
+ * Handles login for administrative portal.
  */
 
 exports.login = async (req, res) => {
@@ -25,12 +29,18 @@ exports.login = async (req, res) => {
     }
 
     if (email === 'admin@wassimfood.com' && password === 'admin123') {
+      const token = jwt.sign(
+        { userId: 'admin_1', role: 'admin', email: 'admin@wassimfood.com' },
+        JWT_SECRET,
+        { expiresIn: JWT_EXPIRES_IN }
+      );
       return res.status(200).json({
         success: true,
-        token: 'simple-admin-token',
+        token,
         admin: {
           email: 'admin@wassimfood.com',
           name: 'Admin Wassim Food',
+          role: 'admin',
         },
       });
     } else {
@@ -46,6 +56,7 @@ exports.login = async (req, res) => {
     });
   }
 };
+
 
 exports.getCustomers = async (req, res) => {
   try {
@@ -121,6 +132,7 @@ exports.getCustomers = async (req, res) => {
         address: client.address || '',
         city: client.city || '',
         avatar: client.avatar || '',
+        note: client.note || client.notes || '',
         loyaltyPoints: client.loyaltyPoints || 0,
         rewardPoints: client.loyaltyPoints || 0,
         status: client.status || 'Active',
@@ -247,6 +259,7 @@ exports.getCustomerById = async (req, res) => {
           address: client.address || '',
           city: client.city || '',
           avatar: client.avatar || '',
+          note: client.note || client.notes || '',
           loyaltyPoints: client.loyaltyPoints || 0,
           rewardPoints: client.loyaltyPoints || 0,
           status: client.status || 'Active',
@@ -341,7 +354,7 @@ exports.createCustomer = async (req, res) => {
 exports.updateCustomer = async (req, res) => {
   try {
     const { id } = req.params;
-    const { fullName, name, phone, email, password, address, city, avatar, status, loyaltyPoints, rewardPoints } = req.body;
+    const { fullName, name, phone, email, password, address, city, avatar, status, loyaltyPoints, rewardPoints, note, notes } = req.body;
 
     const client = await Client.findById(id);
     if (!client) {
@@ -368,6 +381,9 @@ exports.updateCustomer = async (req, res) => {
     if (city !== undefined) client.city = city;
     if (avatar !== undefined) client.avatar = avatar;
     if (status !== undefined) client.status = status;
+    if (note !== undefined || notes !== undefined) {
+      client.note = note !== undefined ? note : notes;
+    }
     if (loyaltyPoints !== undefined || rewardPoints !== undefined) {
       client.loyaltyPoints = Number(loyaltyPoints !== undefined ? loyaltyPoints : rewardPoints);
     }

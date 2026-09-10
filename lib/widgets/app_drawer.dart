@@ -574,38 +574,38 @@ class _DrawerItem extends StatelessWidget {
     final isDarkMode = theme.brightness == Brightness.dark;
 
     final activeBg = isDarkMode
-        ? const Color(0x26E65100)
-        : const Color(0xFFFFEBE5);
-    final activeTextColor = isDarkMode
-        ? const Color(0xFFFF8A65)
-        : const Color(0xFFD84315);
+        ? const Color(0xFF8D4B38).withValues(alpha: 0.16)
+        : const Color(0xFFF9EFEA);
+    final activeTextColor = const Color(0xFF8D4B38);
 
-    final hoverColor = isDarkMode
-        ? const Color(0x0DE65100)
-        : const Color(0x0DD84315);
-    final splashColor = isDarkMode
-        ? const Color(0x1AE65100)
-        : const Color(0x1AD84315);
+    final hoverColor = const Color(0xFF8D4B38).withValues(alpha: 0.05);
+    final splashColor = const Color(0xFF8D4B38).withValues(alpha: 0.1);
 
-    final inactiveTextColor = isDarkMode ? Colors.white70 : const Color(0xFF37474F);
+    final inactiveTextColor = isDarkMode ? const Color(0xFFCBD5E1) : const Color(0xFF334155);
     final iconColor = isActive
         ? activeTextColor
-        : (isDarkMode ? Colors.white54 : const Color(0xFF78909C));
+        : (isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B));
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
+      padding: const EdgeInsets.only(bottom: 6),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(16),
           hoverColor: hoverColor,
           splashColor: splashColor,
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
               color: isActive ? activeBg : Colors.transparent,
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(16),
+              border: isActive
+                  ? Border.all(
+                      color: const Color(0xFF8D4B38).withValues(alpha: isDarkMode ? 0.3 : 0.2),
+                      width: 1,
+                    )
+                  : null,
             ),
             child: Row(
               children: [
@@ -626,11 +626,11 @@ class _DrawerItem extends StatelessWidget {
                   const SizedBox(width: 8),
                 ],
                 Icon(
-                  Icons.chevron_right,
+                  Icons.chevron_right_rounded,
                   color: isActive
                       ? activeTextColor
-                      : (isDarkMode ? Colors.white30 : const Color(0xFFB0BEC5)),
-                  size: 16,
+                      : (isDarkMode ? Colors.white24 : const Color(0xFFCBD5E1)),
+                  size: 18,
                 ),
               ],
             ),

@@ -24,20 +24,20 @@ class MenuItemCard extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(22),
         child: Container(
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-            borderRadius: BorderRadius.circular(20),
+            color: isDark ? const Color(0xFF1E293B) : Colors.white,
+            borderRadius: BorderRadius.circular(22),
             border: Border.all(
-              color: isDark ? Colors.white10 : const Color(0xFFF1F5F9),
+              color: isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0),
               width: 1,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(isDark ? 0.3 : 0.04),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
+                color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.04),
+                blurRadius: 16,
+                offset: const Offset(0, 6),
               ),
             ],
           ),
@@ -48,7 +48,7 @@ class MenuItemCard extends StatelessWidget {
               Stack(
                 children: [
                   ClipRRect(
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
                     child: AspectRatio(
                       aspectRatio: 16 / 10,
                       child: Image.network(
@@ -57,25 +57,26 @@ class MenuItemCard extends StatelessWidget {
                             : 'https://images.unsplash.com/photo-1495195134139-0d4517b28b9f?w=800&auto=format&fit=crop&q=80',
                         width: double.infinity,
                         height: double.infinity,
+                        cacheWidth: 400,
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) => Container(
                           width: double.infinity,
-                          color: isDark ? const Color(0xFF282828) : Colors.grey.shade100,
+                          color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
                           child: Icon(
                             Icons.fastfood_rounded,
                             size: 38,
-                            color: isDark ? Colors.white30 : Colors.grey.shade400,
+                            color: isDark ? const Color(0xFF475569) : const Color(0xFF94A3B8),
                           ),
                         ),
                         loadingBuilder: (context, child, progress) {
                           if (progress == null) return child;
                           return Container(
                             width: double.infinity,
-                            color: isDark ? const Color(0xFF282828) : Colors.grey.shade100,
+                            color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
                             child: const Center(
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                color: Colors.deepOrange,
+                                color: Color(0xFF8D4B38),
                               ),
                             ),
                           );
@@ -89,15 +90,15 @@ class MenuItemCard extends StatelessWidget {
                     Positioned.fill(
                       child: Container(
                         decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.55),
-                          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                          color: Colors.black.withValues(alpha: 0.6),
+                          borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
                         ),
                         child: Center(
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                             decoration: BoxDecoration(
-                              color: Colors.red.shade700,
-                              borderRadius: BorderRadius.circular(8),
+                              color: const Color(0xFFEF4444),
+                              borderRadius: BorderRadius.circular(10),
                             ),
                             child: const Text(
                               'OUT OF STOCK',
@@ -120,13 +121,15 @@ class MenuItemCard extends StatelessWidget {
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                         decoration: BoxDecoration(
-                          color: Colors.deepOrange,
-                          borderRadius: BorderRadius.circular(10),
-                          boxShadow: const [
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF8D4B38), Color(0xFF6E392A)],
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
                             BoxShadow(
-                              color: Colors.black26,
-                              blurRadius: 4,
-                              offset: Offset(0, 2),
+                              color: const Color(0xFF8D4B38).withValues(alpha: 0.4),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3),
                             ),
                           ],
                         ),
@@ -146,10 +149,10 @@ class MenuItemCard extends StatelessWidget {
                       bottom: 8,
                       left: 8,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.6),
-                          borderRadius: BorderRadius.circular(6),
+                          color: Colors.black.withValues(alpha: 0.65),
+                          borderRadius: BorderRadius.circular(8),
                         ),
                         child: const Text(
                           'Limited time',
@@ -180,7 +183,7 @@ class MenuItemCard extends StatelessWidget {
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 15,
-                              color: isDark ? Colors.white : const Color(0xFF2C1810),
+                              color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A),
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -191,19 +194,19 @@ class MenuItemCard extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                           decoration: BoxDecoration(
                             color: isDark
-                                ? Colors.deepOrange.withOpacity(0.18)
-                                : Colors.deepOrange.shade50,
+                                ? const Color(0xFF8D4B38).withValues(alpha: 0.18)
+                                : const Color(0xFFF9EFEA),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(Icons.star_rounded, size: 13, color: Colors.deepOrange),
+                              const Icon(Icons.star_rounded, size: 14, color: Color(0xFF8D4B38)),
                               const SizedBox(width: 3),
                               Text(
                                 item.rating.toStringAsFixed(1),
                                 style: const TextStyle(
-                                  color: Colors.deepOrange,
+                                  color: Color(0xFF8D4B38),
                                   fontWeight: FontWeight.bold,
                                   fontSize: 11,
                                 ),
@@ -221,7 +224,7 @@ class MenuItemCard extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: isDark ? Colors.white60 : Colors.grey.shade600,
+                        color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                         fontSize: 12,
                         height: 1.3,
                       ),
@@ -238,9 +241,9 @@ class MenuItemCard extends StatelessWidget {
                               if (isActiveOffer)
                                 Text(
                                   CurrencyFormatter.formatDH(item.price),
-                                  style: TextStyle(
+                                  style: const TextStyle(
                                     decoration: TextDecoration.lineThrough,
-                                    color: Colors.grey.shade500,
+                                    color: Color(0xFF94A3B8),
                                     fontSize: 11,
                                   ),
                                   maxLines: 1,
@@ -250,8 +253,8 @@ class MenuItemCard extends StatelessWidget {
                                 CurrencyFormatter.formatDH(item.effectivePrice),
                                 style: const TextStyle(
                                   fontWeight: FontWeight.w900,
-                                  fontSize: 15,
-                                  color: Colors.deepOrange,
+                                  fontSize: 16,
+                                  color: Color(0xFF8D4B38),
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -262,22 +265,27 @@ class MenuItemCard extends StatelessWidget {
                         const SizedBox(width: 8),
                         InkWell(
                           onTap: isOutOfStock ? null : onTap,
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(14),
                           child: Container(
-                            width: 36,
-                            height: 36,
+                            width: 38,
+                            height: 38,
                             decoration: BoxDecoration(
+                              gradient: isOutOfStock
+                                  ? null
+                                  : const LinearGradient(
+                                      colors: [Color(0xFF8D4B38), Color(0xFF6E392A)],
+                                    ),
                               color: isOutOfStock
                                   ? (isDark ? Colors.white12 : Colors.grey.shade300)
-                                  : Colors.deepOrange,
-                              borderRadius: BorderRadius.circular(12),
+                                  : null,
+                              borderRadius: BorderRadius.circular(14),
                               boxShadow: isOutOfStock
                                   ? []
                                   : [
                                       BoxShadow(
-                                        color: Colors.deepOrange.withOpacity(0.3),
-                                        blurRadius: 6,
-                                        offset: const Offset(0, 2),
+                                        color: const Color(0xFF8D4B38).withValues(alpha: 0.35),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 3),
                                       ),
                                     ],
                             ),

@@ -44,7 +44,11 @@ class _HomeScreenState extends State<HomeScreen> {
     final selectedBranch = branchProvider.selectedBranch;
 
     if (selectedBranch != null && menuProvider.rawMenuItems.isEmpty && !menuProvider.isLoading) {
-      menuProvider.loadMenu(selectedBranch.id);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && menuProvider.rawMenuItems.isEmpty && !menuProvider.isLoading) {
+          menuProvider.loadMenu(selectedBranch.id);
+        }
+      });
     }
 
     if (widget.scrollToMenu && !_hasNavigatedToMenu) {

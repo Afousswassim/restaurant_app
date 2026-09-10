@@ -148,10 +148,19 @@ class ClientNavbar extends StatelessWidget implements PreferredSizeWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          padding: const EdgeInsets.all(6),
+          padding: const EdgeInsets.all(7),
           decoration: BoxDecoration(
-            color: Colors.deepOrange,
-            borderRadius: BorderRadius.circular(10),
+            gradient: const LinearGradient(
+              colors: [Color(0xFF8D4B38), Color(0xFF6E392A)],
+            ),
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF8D4B38).withValues(alpha: 0.3),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
+              ),
+            ],
           ),
           child: const Icon(
             Icons.restaurant_rounded,
@@ -159,14 +168,14 @@ class ClientNavbar extends StatelessWidget implements PreferredSizeWidget {
             color: Colors.white,
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 10),
         const Text(
           'Wassim Food',
           style: TextStyle(
-            fontSize: 19,
+            fontSize: 20,
             fontWeight: FontWeight.w900,
-            color: Colors.deepOrange,
-            letterSpacing: -0.3,
+            color: Color(0xFF8D4B38),
+            letterSpacing: -0.4,
           ),
         ),
       ],
@@ -183,9 +192,9 @@ class ClientNavbar extends StatelessWidget implements PreferredSizeWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    final bgColor = isDark ? const Color(0xFF282828) : const Color(0xFFF7F7F8);
-    final borderColor = isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.06);
-    final iconColor = isDark ? Colors.white : const Color(0xFF2C1810);
+    final bgColor = isDark ? const Color(0xFF1E293B) : Colors.white;
+    final borderColor = isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFE2E8F0);
+    final iconColor = isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A);
 
     return Tooltip(
       message: tooltip ?? '',
@@ -198,9 +207,9 @@ class ClientNavbar extends StatelessWidget implements PreferredSizeWidget {
           border: Border.all(color: borderColor, width: 1),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+              color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
             ),
           ],
         ),
@@ -223,13 +232,13 @@ class ClientNavbar extends StatelessWidget implements PreferredSizeWidget {
                     top: 8,
                     right: 8,
                     child: Container(
-                      width: 8,
-                      height: 8,
+                      width: 9,
+                      height: 9,
                       decoration: BoxDecoration(
-                        color: Colors.red,
+                        color: const Color(0xFFEF4444),
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: isDark ? const Color(0xFF282828) : Colors.white,
+                          color: isDark ? const Color(0xFF1E293B) : Colors.white,
                           width: 1.5,
                         ),
                       ),

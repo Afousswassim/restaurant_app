@@ -1,8 +1,20 @@
 const Client = require('../models/Client');
 const crypto = require('crypto');
+const jwt = require('jsonwebtoken');
+
+const JWT_SECRET = process.env.JWT_SECRET || 'wassim_food_secret_key_2026';
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
 
 function hashPassword(password) {
   return crypto.createHash('sha256').update(password).digest('hex');
+}
+
+function generateToken(userId, role = 'client') {
+  return jwt.sign(
+    { userId: userId.toString(), role },
+    JWT_SECRET,
+    { expiresIn: JWT_EXPIRES_IN }
+  );
 }
 
 exports.register = async (req, res) => {
@@ -32,7 +44,7 @@ exports.register = async (req, res) => {
       status: 'Active',
     });
 
-    const token = Buffer.from(client._id.toString()).toString('base64');
+    const token = generateToken(client._id, 'client');
 
     // Return client without password
     const clientData = client.toObject();
@@ -90,7 +102,7 @@ exports.login = async (req, res) => {
     client.lastLoginAt = new Date();
     await client.save();
 
-    const token = Buffer.from(client._id.toString()).toString('base64');
+    const token = generateToken(client._id, 'client');
 
     const clientData = client.toObject();
     delete clientData.password;
@@ -102,6 +114,7 @@ exports.login = async (req, res) => {
         client: clientData,
       },
     });
+
   } catch (error) {
     res.status(500).json({
       success: false,

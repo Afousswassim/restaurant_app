@@ -216,6 +216,7 @@ class _AdminOfferDetailsScreenState extends State<AdminOfferDetailsScreen> {
                     _currentOffer.imageUrl.isNotEmpty
                         ? Image.network(
                             _currentOffer.imageUrl,
+                            cacheWidth: 600,
                             fit: BoxFit.cover,
                             errorBuilder: (_, __, ___) => Container(
                               color: primaryColor.withValues(alpha: 0.1),

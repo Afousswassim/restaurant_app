@@ -134,6 +134,7 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
                                       : 'https://images.unsplash.com/photo-1495195134139-0d4517b28b9f?w=600&h=300&fit=crop',
                                   width: double.infinity,
                                   height: double.infinity,
+                                  cacheWidth: 600,
                                   fit: BoxFit.cover,
                                   errorBuilder: (context, error, stackTrace) => Container(
                                     width: double.infinity,

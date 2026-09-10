@@ -18,6 +18,17 @@ class ApiService {
   static final String baseUrl = AppConfig.apiBaseUrl;
   static const Duration timeoutDuration = Duration(seconds: 30);
 
+  static String? _adminToken;
+  static String? _clientToken;
+
+  static void setAdminToken(String? token) {
+    _adminToken = token;
+  }
+
+  static void setClientToken(String? token) {
+    _clientToken = token;
+  }
+
   static Future<dynamic> _makeRequest(
     String method,
     String endpoint, {
@@ -32,9 +43,15 @@ class ApiService {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
       };
-      if (token != null) {
-        headers['Authorization'] = 'Bearer $token';
+      
+      final effectiveToken = token ?? 
+          (endpoint.startsWith('/admin') ? _adminToken : _clientToken) ??
+          _adminToken;
+
+      if (effectiveToken != null) {
+        headers['Authorization'] = 'Bearer $effectiveToken';
       }
+
 
       switch (method.toUpperCase()) {
         case 'GET':

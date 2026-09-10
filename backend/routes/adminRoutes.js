@@ -1,10 +1,15 @@
 const express = require('express');
 const adminController = require('../controllers/adminController');
+const { requireAuth, requireAdmin } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
-// Route: POST /admin/login
+// Route: POST /admin/login (Public)
 router.post('/login', adminController.login);
+
+// Protect all following admin routes with JWT Auth & Admin Role
+router.use(requireAuth, requireAdmin);
+
 
 // Route: GET /admin/customers
 router.get('/customers', adminController.getCustomers);

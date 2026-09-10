@@ -20,8 +20,10 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(() {
-      context.read<BranchProvider>().loadBranches();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<BranchProvider>().loadBranches();
+      }
     });
   }
 

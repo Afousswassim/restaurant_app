@@ -8,6 +8,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:share_plus/share_plus.dart';
 import '../models/branch.dart';
 import '../utils/helpers.dart';
+import '../utils/qr_menu_image_generator.dart';
 
 class AdminQrDetailsScreen extends StatefulWidget {
   final Branch branch;
@@ -34,37 +35,11 @@ class _AdminQrDetailsScreenState extends State<AdminQrDetailsScreen> {
   }
 
   Future<void> _downloadQR() async {
-    try {
-      final qrValidationResult = QrValidator.validate(
-        data: _currentQrLink,
-        version: QrVersions.auto,
-        errorCorrectionLevel: QrErrorCorrectLevel.L,
-      );
-      final qrCode = qrValidationResult.qrCode;
-      if (qrCode == null) return;
-
-      final painter = QrPainter.withQr(
-        qr: qrCode,
-        color: const Color(0xFF000000),
-        emptyColor: const Color(0x00FFFFFF),
-        gapless: true,
-      );
-
-      final picData = await painter.toImageData(2048, format: ui.ImageByteFormat.png);
-      if (picData != null) {
-        final buffer = picData.buffer.asUint8List();
-        await Share.shareXFiles(
-          [XFile.fromData(buffer, mimeType: 'image/png', name: '${widget.branch.slug}_qr.png')],
-          text: 'Wassim Food QR Menu for ${widget.branch.name}',
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error generating QR: $e'), backgroundColor: Colors.red),
-        );
-      }
-    }
+    await QrMenuImageGenerator.downloadAndShareQrMenu(
+      context: context,
+      branch: widget.branch,
+      qrLink: _currentQrLink,
+    );
   }
 
   Future<void> _printQR() async {

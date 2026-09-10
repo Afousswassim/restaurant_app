@@ -13,66 +13,17 @@ class OrderCard extends StatelessWidget {
   });
 
   Color _getStatusColor(String status, ThemeData theme) {
-    switch (status.toLowerCase()) {
-      case 'reward_redeemed':
-        return const Color(0xFFF59E0B);
-      case 'pending':
-        return const Color(0xFFEA580C);
-      case 'preparing':
-        return const Color(0xFF0284C7);
-      case 'delivering':
-      case 'on-way':
-      case 'ready':
-        return const Color(0xFF7C3AED);
-      case 'delivered':
-        return const Color(0xFF16A34A);
-      case 'cancelled':
-        return const Color(0xFFDC2626);
-      default:
-        return const Color(0xFF64748B);
+    if (status.toLowerCase().trim() == 'reward_redeemed') {
+      return const Color(0xFFF59E0B);
     }
+    return OrderStatusUtil.getStatusColor(status);
   }
 
   Color _getStatusBgColor(String status, bool isDark) {
-    if (isDark) {
-      switch (status.toLowerCase()) {
-        case 'reward_redeemed':
-          return const Color(0xFFF59E0B).withOpacity(0.15);
-        case 'pending':
-          return const Color(0xFFEA580C).withOpacity(0.15);
-        case 'preparing':
-          return const Color(0xFF0284C7).withOpacity(0.15);
-        case 'delivering':
-        case 'on-way':
-        case 'ready':
-          return const Color(0xFF7C3AED).withOpacity(0.15);
-        case 'delivered':
-          return const Color(0xFF16A34A).withOpacity(0.15);
-        case 'cancelled':
-          return const Color(0xFFDC2626).withOpacity(0.15);
-        default:
-          return Colors.white10;
-      }
-    } else {
-      switch (status.toLowerCase()) {
-        case 'reward_redeemed':
-          return const Color(0xFFFEF3C7);
-        case 'pending':
-          return const Color(0xFFFFEDD5);
-        case 'preparing':
-          return const Color(0xFFE0F2FE);
-        case 'delivering':
-        case 'on-way':
-        case 'ready':
-          return const Color(0xFFF3E8FF);
-        case 'delivered':
-          return const Color(0xFFDCFCE7);
-        case 'cancelled':
-          return const Color(0xFFFEE2E2);
-        default:
-          return const Color(0xFFF1F5F9);
-      }
+    if (status.toLowerCase().trim() == 'reward_redeemed') {
+      return isDark ? const Color(0xFFF59E0B).withValues(alpha: 0.15) : const Color(0xFFFEF3C7);
     }
+    return OrderStatusUtil.getStatusBgColor(status, isDark);
   }
 
   void _showOrderDetails(BuildContext context) {

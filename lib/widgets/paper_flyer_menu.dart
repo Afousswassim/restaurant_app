@@ -70,17 +70,28 @@ class _PaperFlyerMenuState extends State<PaperFlyerMenu> {
     return Container(
       decoration: const BoxDecoration(
         color: Color(0xFFFDF9F2), // Cream paper background
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       child: SafeArea(
         child: Stack(
           children: [
             Column(
               children: [
+                const SizedBox(height: 10),
+                Center(
+                  child: Container(
+                    width: 44,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFD7CCC8),
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                  ),
+                ),
                 Expanded(
                   child: SingleChildScrollView(
                     physics: const BouncingScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
+                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [

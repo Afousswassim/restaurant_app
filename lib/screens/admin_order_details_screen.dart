@@ -58,56 +58,16 @@ class _AdminOrderDetailsScreenState extends State<AdminOrderDetailsScreen> {
   }
 
   Color _getStatusColor(String status) {
-    switch (status.toLowerCase()) {
-      case 'pending':
-        return const Color(0xFFFF9800);
-      case 'preparing':
-        return const Color(0xFF4CAF50);
-      case 'delivering':
-        return const Color(0xFF2196F3);
-      case 'delivered':
-        return const Color(0xFF2E7D32);
-      case 'cancelled':
-        return const Color(0xFFE53935);
-      default:
-        return const Color(0xFF757575);
-    }
+    return OrderStatusUtil.getStatusColor(status);
   }
 
   Color _getStatusBgColor(String status) {
-    switch (status.toLowerCase()) {
-      case 'pending':
-        return const Color(0xFFFFF3E0);
-      case 'preparing':
-        return const Color(0xFFE8F5E9);
-      case 'delivering':
-        return const Color(0xFFE3F2FD);
-      case 'delivered':
-        return const Color(0xFFE8F5E9);
-      case 'cancelled':
-        return const Color(0xFFFFEBEE);
-      default:
-        return const Color(0xFFF5F5F5);
-    }
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return OrderStatusUtil.getStatusBgColor(status, isDark);
   }
 
   String _getStatusDisplay(String status) {
-    switch (status.toLowerCase()) {
-      case 'pending':
-        return 'Pending';
-      case 'preparing':
-        return 'Preparing';
-      case 'delivering':
-        return 'Delivering';
-      case 'delivered':
-        return 'Delivered';
-      case 'cancelled':
-        return 'Cancelled';
-      default:
-        return status.isNotEmpty
-            ? status[0].toUpperCase() + status.substring(1)
-            : 'Unknown';
-    }
+    return OrderStatusUtil.getStatusDisplay(status);
   }
 
   Future<void> _printInvoice(BuildContext context) async {

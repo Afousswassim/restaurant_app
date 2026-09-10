@@ -19,22 +19,22 @@ class OfferCard extends StatelessWidget {
       child: Container(
         margin: const EdgeInsets.only(right: 16),
         decoration: BoxDecoration(
-          color: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
-          borderRadius: BorderRadius.circular(20),
+          color: isDarkMode ? const Color(0xFF1E293B) : Colors.white,
+          borderRadius: BorderRadius.circular(22),
           border: Border.all(
-            color: isDarkMode ? Colors.white10 : const Color(0xFFF1F5F9),
+            color: isDarkMode ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0),
             width: 1,
           ),
-          boxShadow: const [
+          boxShadow: [
             BoxShadow(
-              color: Color(0x0A000000),
-              blurRadius: 12,
-              offset: Offset(0, 6),
+              color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.05),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
             ),
           ],
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(22),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -46,24 +46,29 @@ class OfferCard extends StatelessWidget {
                       offer.imageUrl,
                       width: double.infinity,
                       height: double.infinity,
+                      cacheWidth: 500,
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) => Container(
                         width: double.infinity,
                         height: double.infinity,
-                        color: theme.colorScheme.primaryContainer,
-                        child: const Icon(Icons.fastfood, size: 48),
+                        color: isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
+                        child: Icon(
+                          Icons.fastfood_rounded,
+                          size: 48,
+                          color: isDarkMode ? const Color(0xFF475569) : const Color(0xFF94A3B8),
+                        ),
                       ),
                     ),
                     if (isOutOfStock)
                       Positioned.fill(
                         child: Container(
-                          color: Colors.black.withValues(alpha: 0.55),
+                          color: Colors.black.withValues(alpha: 0.6),
                           child: Center(
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                               decoration: BoxDecoration(
-                                color: Colors.red.shade700,
-                                borderRadius: BorderRadius.circular(8),
+                                color: const Color(0xFFEF4444),
+                                borderRadius: BorderRadius.circular(10),
                               ),
                               child: const Text(
                                 'OUT OF STOCK',
@@ -83,10 +88,19 @@ class OfferCard extends StatelessWidget {
                         top: 12,
                         left: 12,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
-                            color: Colors.deepOrange,
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF8D4B38), Color(0xFF6E392A)],
+                            ),
                             borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF8D4B38).withValues(alpha: 0.4),
+                                blurRadius: 8,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
                           ),
                           child: Text(
                             offer.offerLabel ?? 'OFFER',
@@ -148,7 +162,7 @@ class OfferCard extends StatelessWidget {
                                 style: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.deepOrange,
+                                  color: Color(0xFF8D4B38),
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -163,7 +177,7 @@ class OfferCard extends StatelessWidget {
                             child: ElevatedButton(
                               onPressed: isOutOfStock ? null : onOrderTap,
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: isOutOfStock ? Colors.grey.shade400 : Colors.deepOrange,
+                                backgroundColor: isOutOfStock ? Colors.grey.shade400 : const Color(0xFF8D4B38),
                                 foregroundColor: Colors.white,
                                 elevation: 0,
                                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),

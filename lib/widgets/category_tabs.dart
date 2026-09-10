@@ -70,7 +70,7 @@ class CategoryTabs extends StatelessWidget {
     return Icon(
       iconData,
       size: 18,
-      color: isSelected ? Colors.white : Colors.deepOrange,
+      color: isSelected ? Colors.white : const Color(0xFF8D4B38),
     );
   }
 
@@ -107,28 +107,33 @@ class CategoryTabs extends StatelessWidget {
             color: Colors.transparent,
             child: InkWell(
               onTap: () => onSelectCategory(name),
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(20),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
                 decoration: BoxDecoration(
+                  gradient: isSelected
+                      ? const LinearGradient(
+                          colors: [Color(0xFF8D4B38), Color(0xFF6E392A)],
+                        )
+                      : null,
                   color: isSelected
-                      ? Colors.deepOrange
-                      : (isDark ? const Color(0xFF282828) : Colors.white),
-                  borderRadius: BorderRadius.circular(16),
+                      ? null
+                      : (isDark ? const Color(0xFF1E293B) : Colors.white),
+                  borderRadius: BorderRadius.circular(20),
                   border: Border.all(
                     color: isSelected
-                        ? Colors.deepOrange
-                        : (isDark ? Colors.white10 : const Color(0xFFE2E8F0)),
+                        ? const Color(0xFF8D4B38)
+                        : (isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0)),
                     width: 1,
                   ),
                   boxShadow: [
                     BoxShadow(
                       color: isSelected
-                          ? Colors.deepOrange.withOpacity(0.3)
-                          : Colors.black.withOpacity(isDark ? 0.2 : 0.03),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
+                          ? const Color(0xFF8D4B38).withValues(alpha: 0.35)
+                          : Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
                     ),
                   ],
                 ),
@@ -142,7 +147,7 @@ class CategoryTabs extends StatelessWidget {
                       style: TextStyle(
                         color: isSelected
                             ? Colors.white
-                            : (isDark ? Colors.white : const Color(0xFF2C1810)),
+                            : (isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A)),
                         fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
                         fontSize: 13,
                       ),
