@@ -82,11 +82,48 @@ exports.createOrder = async (req, res) => {
         client.loyaltyPoints = (client.loyaltyPoints || 0) + Math.round(totalAmount);
         await client.save();
       }
+
+      // Create initial notification for the client
+      try {
+        const shortId = order._id.toString().slice(-6).toUpperCase();
+        await Notification.create({
+          clientId: order.clientId,
+          orderId: order._id,
+          title: 'Commande enregistrée',
+          message: `Votre commande #${shortId} a été enregistrée avec succès.`,
+          isRead: false,
+        });
+      } catch (notifErr) {
+        console.error('Error creating initial order notification:', notifErr);
+      }
     }
 
     res.status(201).json({
       success: true,
       data: order,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+exports.getMyOrders = async (req, res) => {
+  try {
+    const clientId = req.user?.userId || req.user?.id;
+    if (!clientId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Client ID missing from authentication token',
+      });
+    }
+
+    const orders = await Order.find({ clientId }).sort({ createdAt: -1 }).limit(50);
+    res.status(200).json({
+      success: true,
+      data: orders,
     });
   } catch (error) {
     res.status(500).json({

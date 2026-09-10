@@ -10,7 +10,7 @@
 class AppConfig {
   // Change this when backend IP or port changes
   // This must point to your Node.js backend (use LAN IP when testing from mobile)
-  static const String apiBaseUrl = 'http://192.168.137.1:5000';
+  static const String apiBaseUrl = 'https://wassim-food.onrender.com';
 
   // Change this when Flutter Web IP or port changes
   // This is used to build QR links. Do NOT use 'localhost' here when

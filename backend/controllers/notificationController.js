@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Notification = require('../models/Notification');
 
 exports.getNotifications = async (req, res) => {
@@ -22,16 +23,18 @@ exports.getNotifications = async (req, res) => {
 exports.createNotification = async (req, res) => {
   try {
     const { clientId, orderId, title, message, isRead } = req.body;
-    if (!clientId || !orderId || !title || !message) {
+    if (!clientId || !title || !message) {
       return res.status(400).json({
         success: false,
         message: 'Missing required notification fields',
       });
     }
 
+    const validOrderId = (orderId && mongoose.Types.ObjectId.isValid(orderId)) ? orderId : null;
+
     const notification = await Notification.create({
       clientId,
-      orderId,
+      orderId: validOrderId,
       title,
       message,
       isRead: isRead ?? false,

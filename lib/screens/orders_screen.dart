@@ -49,7 +49,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
           });
         }
       } else {
-        // Guest: filter by local order IDs
+        // Guest: fetch locally saved order IDs individually
         final localOrderIds = prefs.getStringList('local_orders') ?? [];
         if (localOrderIds.isEmpty) {
           if (mounted) {
@@ -61,10 +61,19 @@ class _OrdersScreenState extends State<OrdersScreen> {
           return;
         }
 
-        final allOrders = await ApiService.getAllOrders();
+        final List<Order> guestOrders = [];
+        for (final id in localOrderIds) {
+          try {
+            final order = await ApiService.getOrder(id);
+            guestOrders.add(order);
+          } catch (_) {
+            // Ignore orders that were deleted or not found
+          }
+        }
+
         if (mounted) {
           setState(() {
-            _displayOrders = allOrders.where((order) => localOrderIds.contains(order.id)).toList();
+            _displayOrders = guestOrders;
             _isLoading = false;
           });
         }

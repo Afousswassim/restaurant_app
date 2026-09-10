@@ -701,7 +701,7 @@ class ApiService {
   }
 
   static Future<List<Order>> getClientOrders(String clientId) async {
-    final data = await _makeRequest('GET', '/orders?clientId=$clientId');
+    final data = await _makeRequest('GET', '/orders/my-orders');
     return (data as List)
         .map((item) => Order.fromJson(item as Map<String, dynamic>))
         .toList();

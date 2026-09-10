@@ -23,7 +23,6 @@ class NotificationProvider with ChangeNotifier {
       _error = null;
     } catch (e) {
       _error = e.toString().replaceAll('Exception: ', '');
-      _notifications = [];
     } finally {
       _isLoading = false;
       notifyListeners();
