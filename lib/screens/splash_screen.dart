@@ -6,6 +6,7 @@ import '../providers/branch_provider.dart';
 import '../providers/menu_provider.dart';
 import 'branch_selection_screen.dart';
 import 'home_screen.dart';
+import 'menu_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({Key? key}) : super(key: key);
@@ -65,7 +66,7 @@ class _SplashScreenState extends State<SplashScreen>
           // Navigate directly to menu
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(
-              builder: (_) => const MenuScreen(),
+              builder: (_) => MenuScreen(),
             ),
           );
           return;
