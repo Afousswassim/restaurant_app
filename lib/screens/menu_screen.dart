@@ -68,10 +68,21 @@ class _MenuScreenState extends State<MenuScreen> {
     }).toList();
 
     if (selectedBranch == null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const BranchSelectionScreen()),
+      if (branchProvider.isLoading) {
+        return const Scaffold(
+          body: Center(
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.deepOrange),
+            ),
+          ),
         );
+      }
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && branchProvider.selectedBranch == null && !branchProvider.isLoading) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const BranchSelectionScreen()),
+          );
+        }
       });
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }

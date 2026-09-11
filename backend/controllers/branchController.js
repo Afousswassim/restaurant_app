@@ -4,13 +4,11 @@ exports.getBranches = async (req, res) => {
   try {
     const branches = await Branch.find({});
     
-    // Auto-generate qrUrl if missing
+    // Auto-generate qrUrl if missing or outdated
     let modified = false;
     for (let branch of branches) {
-      if (!branch.qrUrl) {
-        // Assume frontend lives at the same host or a known base URL. 
-        // For Wassim Food, the user specified https://wassimfood.com/menu/:slug
-        branch.qrUrl = `https://wassimfood.com/menu/${branch.slug}`;
+      if (!branch.qrUrl || branch.qrUrl.includes('wassimfood.com')) {
+        branch.qrUrl = `https://friendly-marigold-05c76d.netlify.app/menu/${branch.slug}`;
         await branch.save();
         modified = true;
       }
@@ -52,8 +50,8 @@ exports.getBranchQR = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Branch not found' });
     }
     
-    if (!branch.qrUrl) {
-      branch.qrUrl = `https://wassimfood.com/menu/${branch.slug}`;
+    if (!branch.qrUrl || branch.qrUrl.includes('wassimfood.com')) {
+      branch.qrUrl = `https://friendly-marigold-05c76d.netlify.app/menu/${branch.slug}`;
       await branch.save();
     }
     

@@ -62,10 +62,10 @@ class _SplashScreenState extends State<SplashScreen>
 
           if (!mounted) return;
 
-          // Navigate directly to menu, skip BranchSelectionScreen
+          // Navigate directly to menu
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(
-              builder: (_) => const HomeScreen(scrollToMenu: true),
+              builder: (_) => const MenuScreen(),
             ),
           );
           return;
@@ -87,27 +87,39 @@ class _SplashScreenState extends State<SplashScreen>
     }
   }
 
-  /// Extract branchId from URL fragments and query parameters.
-  /// Handles both hash routing (#/menu?branchId=ID) and query routing (?branchId=ID)
+  /// Extract branchId or slug from URL fragments, path, and query parameters.
+  /// Handles:
+  /// - Path routing: /menu/maarif
+  /// - Hash routing: #/menu/maarif or #/menu?branchId=ID
+  /// - Query routing: ?branchId=ID
   String? _extractBranchIdFromUrl() {
     final base = Uri.base;
 
-    // Try query parameters first (direct URL access)
-    if (base.queryParameters.containsKey('branchId')) {
-      return base.queryParameters['branchId'];
+    // 1. Direct path routing: /menu/:slug (e.g., /menu/maarif)
+    final pathSegments = base.pathSegments;
+    if (pathSegments.length >= 2 && pathSegments[0] == 'menu') {
+      return pathSegments[1];
     }
 
-    // Try hash fragment (Flutter Web hash routing)
+    // 2. Hash fragment routing: #/menu/:slug or #/menu?branchId=slug
     if (base.fragment.isNotEmpty) {
       final fragment = base.fragment;
+      final cleanFragment = fragment.startsWith('#') ? fragment.substring(1) : fragment;
+      final uri = Uri.parse(cleanFragment.startsWith('/') ? cleanFragment : '/$cleanFragment');
 
-      // Fragment format: /menu?branchId=ID or #/menu?branchId=ID
-      final queryIndex = fragment.indexOf('?');
-      if (queryIndex != -1) {
-        final queryPart = fragment.substring(queryIndex + 1);
-        final params = Uri.splitQueryString(queryPart);
-        return params['branchId'];
+      final segs = uri.pathSegments;
+      if (segs.length >= 2 && segs[0] == 'menu') {
+        return segs[1];
       }
+
+      if (uri.queryParameters.containsKey('branchId')) {
+        return uri.queryParameters['branchId'];
+      }
+    }
+
+    // 3. Direct query parameters (e.g., ?branchId=ID)
+    if (base.queryParameters.containsKey('branchId')) {
+      return base.queryParameters['branchId'];
     }
 
     return null;
