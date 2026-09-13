@@ -3,8 +3,25 @@ const Notification = require('../models/Notification');
 
 exports.getNotifications = async (req, res) => {
   try {
-    const { clientId } = req.params;
-    const notifications = await Notification.find({ clientId })
+    const rawId = req.params.clientId;
+    const authUserId = req.user?.userId || req.user?.id;
+    const targetClientId = (rawId && rawId !== 'me') ? rawId : authUserId;
+
+    if (!targetClientId || !mongoose.Types.ObjectId.isValid(targetClientId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid or missing Client ID',
+      });
+    }
+
+    if (req.user && req.user.role === 'client' && authUserId !== targetClientId.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied: Cannot view notifications of another client',
+      });
+    }
+
+    const notifications = await Notification.find({ clientId: targetClientId })
       .sort({ createdAt: -1 })
       .limit(100);
 
@@ -27,6 +44,13 @@ exports.createNotification = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: 'Missing required notification fields',
+      });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(clientId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid Client ID format',
       });
     }
 
@@ -55,6 +79,13 @@ exports.createNotification = async (req, res) => {
 exports.markAsRead = async (req, res) => {
   try {
     const { id } = req.params;
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid Notification ID format',
+      });
+    }
+
     const notification = await Notification.findByIdAndUpdate(
       id,
       { isRead: true },
@@ -81,9 +112,19 @@ exports.markAsRead = async (req, res) => {
 
 exports.markAllAsRead = async (req, res) => {
   try {
-    const { clientId } = req.params;
+    const rawId = req.params.clientId;
+    const authUserId = req.user?.userId || req.user?.id;
+    const targetClientId = (rawId && rawId !== 'me') ? rawId : authUserId;
+
+    if (!targetClientId || !mongoose.Types.ObjectId.isValid(targetClientId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid Client ID format',
+      });
+    }
+
     const result = await Notification.updateMany(
-      { clientId, isRead: false },
+      { clientId: targetClientId, isRead: false },
       { isRead: true }
     );
 
@@ -97,4 +138,4 @@ exports.markAllAsRead = async (req, res) => {
       message: error.message,
     });
   }
-};
+};

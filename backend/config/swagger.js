@@ -1,8 +1,8 @@
 const swaggerJsdoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
 
-const port = process.env.PORT || 5000;
-const defaultUrl = `http://localhost:${port}`;
+
+const defaultUrl = `https://wassim-food.onrender.com`;
 
 const options = {
   definition: {

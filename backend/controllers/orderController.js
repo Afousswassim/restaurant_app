@@ -194,22 +194,41 @@ exports.updateOrderStatus = async (req, res) => {
     }
 
     const statusLabels = {
-      pending: 'Pending',
-      preparing: 'Preparing',
-      delivering: 'Delivering',
-      delivered: 'Delivered',
+      pending: 'Commande en attente',
+      preparing: 'Commande en préparation',
+      delivering: 'Commande en cours de livraison',
+      delivered: 'Commande livrée',
+      cancelled: 'Commande annulée',
     };
 
-    const notifyStatuses = ['preparing', 'delivering', 'delivered'];
-    if (order.clientId && notifyStatuses.includes(status.toLowerCase())) {
+    const statusMessages = {
+      pending: (shortId) => `Votre commande #${shortId} est en attente de confirmation.`,
+      preparing: (shortId) => `Votre commande #${shortId} est en cours de préparation.`,
+      delivering: (shortId) => `Votre commande #${shortId} est en cours de livraison.`,
+      delivered: (shortId) => `Votre commande #${shortId} a été livrée avec succès. Bonne dégustation !`,
+      cancelled: (shortId) => `Votre commande #${shortId} a été annulée.`,
+    };
+
+    const notifyStatuses = ['pending', 'preparing', 'delivering', 'delivered', 'cancelled'];
+    const normalizedStatus = (status || '').toLowerCase();
+
+    if (order.clientId && notifyStatuses.includes(normalizedStatus)) {
       const shortId = order._id.toString().slice(-6).toUpperCase();
-      await Notification.create({
-        clientId: order.clientId,
-        orderId: order._id,
-        title: `Order #${shortId} status updated`,
-        message: `Your order #${shortId} is now ${statusLabels[status] ?? status}.`,
-        isRead: false,
-      });
+      const title = statusLabels[normalizedStatus] || `Statut de la commande mis à jour`;
+      const messageBuilder = statusMessages[normalizedStatus];
+      const message = messageBuilder ? messageBuilder(shortId) : `Votre commande #${shortId} est maintenant ${status}.`;
+
+      try {
+        await Notification.create({
+          clientId: order.clientId,
+          orderId: order._id,
+          title,
+          message,
+          isRead: false,
+        });
+      } catch (notifErr) {
+        console.error('Error creating status update notification:', notifErr);
+      }
     }
 
     res.status(200).json({

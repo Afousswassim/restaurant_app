@@ -18,18 +18,19 @@ class NotificationScreen extends StatefulWidget {
 }
 
 class _NotificationScreenState extends State<NotificationScreen> {
-  bool _didLoad = false;
+  String? _lastLoadedClientId;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (!_didLoad) {
-      final client = context.read<ClientProvider>().currentClient;
-      final notificationProvider = context.read<NotificationProvider>();
-      if (client != null) {
-        notificationProvider.loadNotifications(client.id);
-      }
-      _didLoad = true;
+    final client = context.read<ClientProvider>().currentClient;
+    if (client != null && client.id != _lastLoadedClientId) {
+      _lastLoadedClientId = client.id;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          context.read<NotificationProvider>().loadNotifications(client.id);
+        }
+      });
     }
   }
 
@@ -64,6 +65,46 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
             if (notificationProv.isLoading) {
               return const Center(child: CircularProgressIndicator());
+            }
+
+            if (notificationProv.error != null && notificationProv.notifications.isEmpty) {
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.error_outline_rounded,
+                        size: 64,
+                        color: colorScheme.error,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Failed to load notifications',
+                        style: textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: colorScheme.onSurface,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        notificationProv.error!,
+                        textAlign: TextAlign.center,
+                        style: textTheme.bodyMedium?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      ElevatedButton.icon(
+                        onPressed: () => notificationProv.loadNotifications(client.id),
+                        icon: const Icon(Icons.refresh_rounded),
+                        label: const Text('Retry'),
+                      ),
+                    ],
+                  ),
+                ),
+              );
             }
 
             final notifications = notificationProv.notifications;

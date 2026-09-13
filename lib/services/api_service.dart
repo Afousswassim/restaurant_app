@@ -722,7 +722,7 @@ class ApiService {
   static Future<List<NotificationItem>> getNotifications(
     String clientId,
   ) async {
-    final data = await _makeRequest('GET', '/notifications/$clientId');
+    final data = await _makeRequest('GET', '/notifications/$clientId', token: _clientToken);
     return (data as List)
         .map((item) => NotificationItem.fromJson(item as Map<String, dynamic>))
         .toList();
@@ -748,11 +748,11 @@ class ApiService {
   }
 
   static Future<void> markNotificationAsRead(String id) async {
-    await _makeRequest('PUT', '/notifications/$id/read');
+    await _makeRequest('PUT', '/notifications/$id/read', token: _clientToken);
   }
 
   static Future<void> markAllNotificationsAsRead(String clientId) async {
-    await _makeRequest('PUT', '/notifications/$clientId/read-all');
+    await _makeRequest('PUT', '/notifications/$clientId/read-all', token: _clientToken);
   }
 
   // Admin login API call
@@ -795,7 +795,7 @@ class ApiService {
 
   // Fetch all orders for the admin panel
   static Future<List<Order>> getOrders() async {
-    final data = await _makeRequest('GET', '/orders');
+    final data = await _makeRequest('GET', '/orders', token: _adminToken);
     return (data as List)
         .map((item) => Order.fromJson(item as Map<String, dynamic>))
         .toList();
@@ -807,6 +807,7 @@ class ApiService {
       'PUT',
       '/orders/$orderId/status',
       body: {'status': status},
+      token: _adminToken,
     );
     return Order.fromJson(data as Map<String, dynamic>);
   }
